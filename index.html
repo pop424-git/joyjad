@@ -648,7 +648,10 @@
       flex:0 1 auto; height:100%; width:auto; aspect-ratio:61/134;
       max-width:100%; align-self:center;
     }
-    .courts-grid[data-n="2"] .court-body{ flex:0 0 auto; width:100%; height:auto; aspect-ratio:134/61; margin:auto 0; }
+    .courts-grid[data-n="2"] .court-body{
+      flex:0 1 auto; min-height:0; height:100%; width:auto; aspect-ratio:134/61;
+      max-width:100%; align-self:center;
+    }
 
     /* คิวรอบรรทัดละ 2 คน — ชื่อกับปุ่มเลื่อนคิวอยู่บรรทัดเดียวกัน */
     .q-list{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
