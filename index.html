@@ -145,25 +145,31 @@
 
   /* ---------- step 1: courts ---------- */
   .court-choices{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); flex:0 0 auto; }
-  .court-labels{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; flex:0 0 auto; }
-  .cnum{
-    display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border);
-    border-radius:10px; padding:6px 8px;
+  .court-slots{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-top:8px; flex:0 0 auto; }
+  .cslot{
+    position:relative; aspect-ratio:5/6; border-radius:8px; overflow:hidden; cursor:pointer;
+    border:2px solid var(--border); background:linear-gradient(180deg,var(--court-pink),var(--court-pink-dark));
   }
-  .cnum span{ font-size:var(--fs-xs); color:var(--muted); font-weight:700; white-space:nowrap; }
-  .cnum input{
-    width:2.6em; text-align:center; border:1px solid var(--border); border-radius:8px; padding:5px 2px;
-    font-size:var(--fs-sm); font-weight:800; font-family:inherit; background:var(--panel2); color:var(--text);
+  .cslot .court-lines{ position:absolute; inset:0; width:100%; height:100%; display:block; }
+  .cslot .lines-h{ display:none; }
+  .cslot .court-lines line, .cslot .court-lines rect{ stroke:var(--line); fill:none; }
+  .cslot-no{
+    position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+    font-size:clamp(26px,8vw,44px); font-weight:900; color:#8c2050; opacity:.35; line-height:1;
+    pointer-events:none; user-select:none;
   }
+  .cslot.on{ border-color:var(--accent); background:var(--accent); box-shadow:0 0 0 2px rgba(232,40,107,.25); }
+  .cslot.on .court-lines line, .cslot.on .court-lines rect{ stroke:rgba(255,255,255,.6); }
+  .cslot.on .cslot-no{ color:var(--accent-ink); opacity:1; }
   .cchoice{
     background:var(--panel); border:2px solid var(--border); border-radius:var(--radius);
     padding:clamp(10px,1.8vh,20px) 4px; cursor:pointer; text-align:center; box-shadow:var(--shadow);
   }
   .cchoice .num{ font-size:var(--fs-xl); font-weight:800; line-height:1; }
   .cchoice .cap{ font-size:var(--fs-xs); color:var(--muted); margin-top:3px; }
-  .cchoice.on{ border-color:var(--accent); background:var(--accent-soft); }
-  .cchoice.on .num{ color:var(--accent); }
-  .cchoice.on .cap{ color:var(--accent); font-weight:700; }
+  .cchoice.on{ border-color:var(--accent); background:var(--accent); }
+  .cchoice.on .num{ color:var(--accent-ink); }
+  .cchoice.on .cap{ color:var(--accent-ink); font-weight:700; }
 
   /* ---------- step 2: pick players ---------- */
   .pool-wrap{ flex:1 1 auto; min-height:0; display:flex; flex-direction:column; gap:8px; }
@@ -220,6 +226,10 @@
     .courts-grid[data-n="4"]{ grid-template-columns:repeat(4,1fr); }
     .courts-grid[data-n="5"], .courts-grid[data-n="6"]{ grid-template-columns:repeat(3,1fr); }
     .courts-grid[data-n="5"] .court:nth-child(5){ grid-column:span 1; }
+    /* จอแนวนอน: สนามให้เลือก 10 อันเรียงแถวเดียว สูงเท่าปุ่มเลือกจำนวนสนาม เว้นช่องกว้างขึ้น */
+    .court-slots{ grid-template-columns:repeat(10,1fr); gap:14px; }
+    .cslot{ aspect-ratio:unset; height:var(--cslot-h, 90px); }
+    .cslot-no{ font-size:clamp(20px,2.4vw,32px); }
   }
 
   .court{
@@ -763,7 +773,7 @@
       <div class="brand hero">
         <h1 class="logo">จอย<s class="strike">จร</s>จัด<span class="ball">🏸</span></h1>
         <div class="rule-line"></div>
-        <p class="tagline">ก๊วนน้องใหม่ สนุกสนาน เป็นกันเอง<br>บางวันมีของแจกด้วยนะ</p>
+        <p class="tagline">ก๊วนน้องใหม่ สนุกสนาน เป็นกันเอง</p>
         <div class="hero-meta">
           <div class="hm">
             <span class="ic">📍</span>
@@ -790,7 +800,8 @@
       <div class="pick-courts">
         <div class="pick-label">วันนี้จองกี่สนาม?</div>
         <div class="court-choices" id="courtChoices"></div>
-        <div class="court-labels" id="courtLabels"></div>
+        <div class="court-slots" id="courtSlots"></div>
+        <div class="note-line" id="courtNote"></div>
       </div>
       <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน<br>พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง
         <div class="wait-count" id="viewerWaitCount"></div>
@@ -970,6 +981,7 @@ var EKEY = "badminton-ended-v1";
 var STATE_API = "/api/state";
 var POLL_MS = 5000;
 var MIN_COURTS = 1, MAX_COURTS = 4;
+var TOTAL_COURTS = 10;        // สนามจริงที่สนามแบดมีทั้งหมด (คงที่)
 var PER_COURT_MIN = 4;   // ขั้นต่ำต่อสนาม (คู่ = 4 คนพอดี 1 คู่) ไม่จำกัดสูงสุด — คิวรอได้ไม่อั้น
 var MAX_PLAYERS_HARD = 120;   // เพดานกันเผลอพิมพ์เกินจริง ไม่ใช่ข้อจำกัดของเกม
 var SLOTS = 4;               // doubles
@@ -983,7 +995,7 @@ var phase = "setup";                 // setup | pick | arrange | play | summary 
 var courtCount = 2;
 var roster = [];                     // [{name, last}]  จำข้ามก๊วน
 var prices = { court:0, tube:0 };    // จำราคาไว้ครั้งหน้า
-var courtLabels = [];                // เลขสนามจริง ต่อตำแหน่งที่ 1..MAX_COURTS จำข้ามก๊วน
+var selectedCourts = [1,2];          // เลขสนามจริงที่เลือกใช้ (ตามลำดับ) จำข้ามก๊วน
 var picked = [];                     // ชื่อที่เลือกวันนี้ (ตามลำดับที่แตะ)
 var players = [];                    // {id,name,attending,status,courtId,games,consec,order}
 var courts  = [];                    // {id, slots:[4], gameNo}
@@ -1129,14 +1141,16 @@ function loadRoster(){
                       .map(function(x){ return { name:String(x.name).slice(0,20), last:x.last|0 }; });
     }
     if(d && d.prices){ prices = { court:+d.prices.court||0, tube:+d.prices.tube||0 }; }
-    if(d && Array.isArray(d.courtLabels)){
-      courtLabels = d.courtLabels.slice(0, MAX_COURTS).map(function(v,i){ return String(v||"").trim() || String(i+1); });
+    if(d && Array.isArray(d.selectedCourts)){
+      var seen = {};
+      selectedCourts = d.selectedCourts.map(function(v){ return parseInt(v,10)||0; })
+        .filter(function(n){ return n>=1 && n<=TOTAL_COURTS && !seen[n] && (seen[n]=true); });
     }
   }catch(e){}
 }
 function saveRoster(){
   if(!storageOK) return;
-  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices, courtLabels:courtLabels })); }catch(e){}
+  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices, selectedCourts:selectedCourts })); }catch(e){}
 }
 function rosterSorted(){
   return roster.slice().sort(function(a,b){
@@ -1300,11 +1314,44 @@ function applySnapshot(d){
 }
 
 /* ================= step 1 : courts ================= */
-function courtLabel(pos){ return courtLabels[pos-1] || String(pos); }
-function setCourtLabel(pos, val){
-  val = String(val||"").trim().slice(0,4) || String(pos);
-  courtLabels[pos-1] = val;
+function courtLabel(pos){ return String(selectedCourts[pos-1] || pos); }
+function reconcileSelectedCourts(){
+  if(selectedCourts.length > courtCount) selectedCourts = selectedCourts.slice(0, courtCount);
+  while(selectedCourts.length < courtCount){
+    var next = null;
+    for(var n=1;n<=TOTAL_COURTS;n++){ if(selectedCourts.indexOf(n) < 0){ next = n; break; } }
+    if(next === null) break;
+    selectedCourts.push(next);
+  }
+}
+function toggleCourtSlot(n){
+  var at = selectedCourts.indexOf(n);
+  if(at >= 0) selectedCourts.splice(at, 1);
+  else{
+    if(selectedCourts.length >= courtCount) selectedCourts.shift();   // เต็มแล้ว: ปลดตัวที่เลือกไว้นานสุดออกให้อัตโนมัติ
+    selectedCourts.push(n);
+  }
   saveRoster();
+  renderCourtSlots();
+}
+function renderCourtSlots(){
+  var shtml = "";
+  for(var i=1;i<=TOTAL_COURTS;i++){
+    shtml += '<div class="cslot'+(selectedCourts.indexOf(i)>=0?" on":"")+'" data-cs="'+i+'">'
+           + courtLinesSVG() + '<div class="cslot-no">'+i+'</div></div>';
+  }
+  document.getElementById("courtSlots").innerHTML = shtml;
+  syncCourtSlotHeight();
+  var n = selectedCourts.length, ok = n === courtCount;
+  var note = document.getElementById("courtNote");
+  note.className = "note-line " + (ok ? "good" : "bad");
+  note.textContent = ok ? "" : "เลือกสนามแล้ว " + n + "/" + courtCount + " — แตะให้ครบก่อนไปต่อ";
+  document.getElementById("btnToPick").disabled = !ok;
+}
+function syncCourtSlotHeight(){
+  var cc = document.querySelector("#courtChoices .cchoice"), wrap = document.getElementById("courtSlots");
+  if(!cc || !wrap) return;
+  wrap.style.setProperty("--cslot-h", cc.offsetHeight + "px");
 }
 function renderSetup(){
   var html = "", i;
@@ -1314,12 +1361,9 @@ function renderSetup(){
           + '<div class="cap">สนาม</div></div>';
   }
   document.getElementById("courtChoices").innerHTML = html;
-  var lhtml = "";
-  for(i=1;i<=courtCount;i++){
-    lhtml += '<div class="cnum"><span>สนามที่ '+i+' คือเลข</span>'
-           + '<input class="clbl" data-cl="'+i+'" maxlength="4" inputmode="numeric" value="'+esc(courtLabel(i))+'"></div>';
-  }
-  document.getElementById("courtLabels").innerHTML = lhtml;
+  reconcileSelectedCourts();
+  saveRoster();
+  renderCourtSlots();
 }
 
 /* ================= step 2 : pick ================= */
@@ -2151,7 +2195,8 @@ document.addEventListener("click", function(e){
   if(!isAdmin) return;                       // โหมดดูสด: อ่านอย่างเดียว
   var t = e.target.closest(
     "[data-cc],[data-pk],[data-rx],[data-ap],[data-ac],[data-court],[data-end],[data-move],"
-    + "[data-out],[data-in],[data-pick],[data-confirm],[data-close],[data-toggle],[data-del],[data-join]"
+    + "[data-out],[data-in],[data-pick],[data-confirm],[data-close],[data-toggle],[data-del],[data-join],"
+    + "[data-cs]"
   );
   if(!t) return;
 
@@ -2161,7 +2206,13 @@ document.addEventListener("click", function(e){
     if(confirm("ลบ " + rn + " ออกจากรายชื่อที่จำไว้?")){ rosterRemove(rn); renderPick(); }
     return;
   }
-  if(t.hasAttribute("data-cc")){ courtCount = +t.getAttribute("data-cc"); renderSetup(); }
+  if(t.hasAttribute("data-cc")){
+    courtCount = +t.getAttribute("data-cc");
+    selectedCourts = [];
+    for(var cc=1; cc<=courtCount; cc++) selectedCourts.push(cc);
+    renderSetup();
+  }
+  else if(t.hasAttribute("data-cs"))   toggleCourtSlot(+t.getAttribute("data-cs"));
   else if(t.hasAttribute("data-pk"))   togglePick(t.getAttribute("data-pk"));
   else if(t.hasAttribute("data-ap"))   arrangeAdd(+t.getAttribute("data-ap"));
   else if(t.hasAttribute("data-ac"))   arrangeRemove(+t.getAttribute("data-ac"), +t.getAttribute("data-as"));
@@ -2259,11 +2310,6 @@ function bindCost(id, key){
   });
 }
 bindCost("inCourtFee","court"); bindCost("inShuttles","shuttles"); bindCost("inTube","tube");
-document.addEventListener("input", function(e){
-  var el = e.target.closest("[data-cl]");
-  if(!el) return;
-  setCourtLabel(+el.getAttribute("data-cl"), el.value);
-});
 document.addEventListener("click", function(e){
   var b = e.target.closest("[data-shut]");
   if(!b) return;
@@ -2276,7 +2322,7 @@ document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
 var orientTimer = null;
 window.addEventListener("resize", function(){
   if(orientTimer) clearTimeout(orientTimer);
-  orientTimer = setTimeout(function(){ orientCourts(); fitQueue(); fitSummary(); }, 120);
+  orientTimer = setTimeout(function(){ orientCourts(); fitQueue(); fitSummary(); syncCourtSlotHeight(); }, 120);
 });
 window.addEventListener("pagehide", function(){ if(players.length && phase !== "setup" && phase !== "pick") save(); });
 document.addEventListener("visibilitychange", function(){
