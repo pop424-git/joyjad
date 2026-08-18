@@ -145,6 +145,16 @@
 
   /* ---------- step 1: courts ---------- */
   .court-choices{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); flex:0 0 auto; }
+  .court-labels{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; flex:0 0 auto; }
+  .cnum{
+    display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border);
+    border-radius:10px; padding:6px 8px;
+  }
+  .cnum span{ font-size:var(--fs-xs); color:var(--muted); font-weight:700; white-space:nowrap; }
+  .cnum input{
+    width:2.6em; text-align:center; border:1px solid var(--border); border-radius:8px; padding:5px 2px;
+    font-size:var(--fs-sm); font-weight:800; font-family:inherit; background:var(--panel2); color:var(--text);
+  }
   .cchoice{
     background:var(--panel); border:2px solid var(--border); border-radius:var(--radius);
     padding:clamp(10px,1.8vh,20px) 4px; cursor:pointer; text-align:center; box-shadow:var(--shadow);
@@ -780,6 +790,7 @@
       <div class="pick-courts">
         <div class="pick-label">วันนี้จองกี่สนาม?</div>
         <div class="court-choices" id="courtChoices"></div>
+        <div class="court-labels" id="courtLabels"></div>
       </div>
       <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน<br>พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง
         <div class="wait-count" id="viewerWaitCount"></div>
@@ -972,6 +983,7 @@ var phase = "setup";                 // setup | pick | arrange | play | summary 
 var courtCount = 2;
 var roster = [];                     // [{name, last}]  จำข้ามก๊วน
 var prices = { court:0, tube:0 };    // จำราคาไว้ครั้งหน้า
+var courtLabels = [];                // เลขสนามจริง ต่อตำแหน่งที่ 1..MAX_COURTS จำข้ามก๊วน
 var picked = [];                     // ชื่อที่เลือกวันนี้ (ตามลำดับที่แตะ)
 var players = [];                    // {id,name,attending,status,courtId,games,consec,order}
 var courts  = [];                    // {id, slots:[4], gameNo}
@@ -1117,11 +1129,14 @@ function loadRoster(){
                       .map(function(x){ return { name:String(x.name).slice(0,20), last:x.last|0 }; });
     }
     if(d && d.prices){ prices = { court:+d.prices.court||0, tube:+d.prices.tube||0 }; }
+    if(d && Array.isArray(d.courtLabels)){
+      courtLabels = d.courtLabels.slice(0, MAX_COURTS).map(function(v,i){ return String(v||"").trim() || String(i+1); });
+    }
   }catch(e){}
 }
 function saveRoster(){
   if(!storageOK) return;
-  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices })); }catch(e){}
+  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices, courtLabels:courtLabels })); }catch(e){}
 }
 function rosterSorted(){
   return roster.slice().sort(function(a,b){
@@ -1261,7 +1276,7 @@ function applySnapshot(d){
       if(x === null || !ids[x] || seen[x]) return null;
       seen[x] = true; return x;
     });
-    return { id:(c.id|0) || (i+1), slots:slots, gameNo:c.gameNo|0, startedAt: c.startedAt || Date.now() };
+    return { id:(c.id|0) || (i+1), no:String(c.no||"").trim() || String((c.id|0) || (i+1)), slots:slots, gameNo:c.gameNo|0, startedAt: c.startedAt || Date.now() };
   });
   courts.forEach(function(c){
     c.slots.forEach(function(pid, i){
@@ -1285,6 +1300,12 @@ function applySnapshot(d){
 }
 
 /* ================= step 1 : courts ================= */
+function courtLabel(pos){ return courtLabels[pos-1] || String(pos); }
+function setCourtLabel(pos, val){
+  val = String(val||"").trim().slice(0,4) || String(pos);
+  courtLabels[pos-1] = val;
+  saveRoster();
+}
 function renderSetup(){
   var html = "", i;
   for(i=MIN_COURTS;i<=MAX_COURTS;i++){
@@ -1293,6 +1314,12 @@ function renderSetup(){
           + '<div class="cap">สนาม</div></div>';
   }
   document.getElementById("courtChoices").innerHTML = html;
+  var lhtml = "";
+  for(i=1;i<=courtCount;i++){
+    lhtml += '<div class="cnum"><span>สนามที่ '+i+' คือเลข</span>'
+           + '<input class="clbl" data-cl="'+i+'" maxlength="4" inputmode="numeric" value="'+esc(courtLabel(i))+'"></div>';
+  }
+  document.getElementById("courtLabels").innerHTML = lhtml;
 }
 
 /* ================= step 2 : pick ================= */
@@ -1336,7 +1363,7 @@ function buildFromPicked(){
   });
   turnCounter = players.length;
   courts = [];
-  for(var i=0;i<courtCount;i++) courts.push({ id:i+1, slots:[null,null,null,null], gameNo:0, startedAt:null });
+  for(var i=0;i<courtCount;i++) courts.push({ id:i+1, no:courtLabel(i+1), slots:[null,null,null,null], gameNo:0, startedAt:null });
 }
 function activeCourt(){
   for(var i=0;i<courts.length;i++){
@@ -1390,7 +1417,7 @@ function renderArrange(){
   grid.innerHTML = courts.map(function(c){
     var n = onCourtPlayers(c).length;
     return '<div class="court'+(act && act.id===c.id ? " active" : "")+'">'
-      + '<div class="court-head"><div class="court-title">สนาม '+c.id+'</div>'
+      + '<div class="court-head"><div class="court-title">สนาม '+c.no+'</div>'
       +   '<div class="court-meta">'+n+'/'+SLOTS+(act && act.id===c.id ? ' · กำลังเลือก' : '')+'</div></div>'
       + courtBodyHTML(c, true)
       + '</div>';
@@ -1453,7 +1480,7 @@ function courtBodyHTML(c, isArrange){
   var s = [0,1,2,3].map(function(i){ return slotHTML(c, i, isArrange); });
   return '<div class="court-body">'
     + courtLinesSVG()
-    + '<div class="court-no">' + c.id + '</div>'
+    + '<div class="court-no">' + c.no + '</div>'
     + '<div class="net-post"></div>'
     + '<div class="players">' + s[0] + s[2] + s[1] + s[3] + '</div></div>';
 }
@@ -1482,7 +1509,7 @@ function renderPlay(){
   grid.innerHTML = courts.map(function(c){
     var n = onCourtPlayers(c).length;
     return '<div class="court">'
-      + '<div class="court-head"><div class="court-title">สนาม '+c.id+'</div>'
+      + '<div class="court-head"><div class="court-title">สนาม '+c.no+'</div>'
       +   '<div class="court-meta">'+(c.gameNo===0 ? "เกมแรก" : "เกมที่ "+(c.gameNo+1))+'</div>'
       +   '<div class="court-timer" data-timer="'+c.id+'">'+fmtTimer(c)+'</div></div>'
       + courtBodyHTML(c, false)
@@ -1658,7 +1685,7 @@ function confirmEnd(){
   }
   c.gameNo += 1;
   c.startedAt = Date.now();
-  speakSub(c.id, pending.in.map(function(pid){ var p = getP(pid); return p ? p.name : ""; }).filter(Boolean));
+  speakSub(c.no, pending.in.map(function(pid){ var p = getP(pid); return p ? p.name : ""; }).filter(Boolean));
   closeSheet(); render();
 }
 
@@ -1718,7 +1745,7 @@ function renderSheet(){
 }
 function endSheetHTML(){
   var c = getCourt(pending.courtId), wl = waitingList();
-  var body = '<h2>สนาม '+c.id+' จบเกม</h2>'
+  var body = '<h2>สนาม '+c.no+' จบเกม</h2>'
     + '<p class="sub">' + (pending.auto
         ? "คนที่เล่นครบ "+ROTATE+" เกมออกอัตโนมัติ — แตะชื่อเพื่อเปลี่ยนได้"
         : "แตะเลือก "+pending.need+" คนที่จะออก") + '</p>'
@@ -1760,7 +1787,7 @@ function subSheetHTML(){
     if(p) others.push({ p:p, sameSide: (i < 2) === (pending.slot < 2) });
   });
 
-  var body = '<h2>' + (curP ? "เปลี่ยนตัว: " + dispName(curP.name) : "ใส่คนลงช่องว่าง · สนาม " + c.id) + '</h2>'
+  var body = '<h2>' + (curP ? "เปลี่ยนตัว: " + dispName(curP.name) : "ใส่คนลงช่องว่าง · สนาม " + c.no) + '</h2>'
     + '<p class="sub">' + (curP
         ? "เลือกจากคิวรอ = " + esc(curP.name) + " ออกไปรับคิวแทน · เลือกคนในสนาม = สลับตำแหน่งกัน"
         : "เลือกคนในคิวลงสนาม หรือดึงคนในสนามมาลงช่องนี้") + '</p>';
@@ -1849,8 +1876,9 @@ function renderManage(){
                             .sort(function(a,b){ return a.name.localeCompare(b.name,"th"); });
   var html = '<div class="plist-label">มาวันนี้ · '+today.length+' คน</div>';
   html += today.map(function(p){
+    var pc = p.status === "playing" ? getCourt(p.courtId) : null;
     var where = !p.attending ? "กลับบ้านแล้ว"
-              : (p.status === "playing" ? "กำลังตี สนาม " + p.courtId : "รอคิว " + fmtWait(p));
+              : (pc ? "กำลังตี สนาม " + pc.no : "รอคิว " + fmtWait(p));
     return '<div class="prow'+(p.attending?"":" off")+'"><div class="pinfo"><div class="pname">'+dispName(p.name)+'</div>'
          + '<div class="pmeta">'+where+' · เล่นแล้ว '+p.games+' เกม</div></div>'
          + '<div class="pctl">'
@@ -2231,6 +2259,11 @@ function bindCost(id, key){
   });
 }
 bindCost("inCourtFee","court"); bindCost("inShuttles","shuttles"); bindCost("inTube","tube");
+document.addEventListener("input", function(e){
+  var el = e.target.closest("[data-cl]");
+  if(!el) return;
+  setCourtLabel(+el.getAttribute("data-cl"), el.value);
+});
 document.addEventListener("click", function(e){
   var b = e.target.closest("[data-shut]");
   if(!b) return;
