@@ -1019,14 +1019,17 @@ if("speechSynthesis" in window){
 }
 function speakSub(courtId, names){
   if(!("speechSynthesis" in window) || !names || !names.length) return;
-  var u = new SpeechSynthesisUtterance("สนามที่ " + courtId + ", " + names.join(", "));
-  u.lang = "th-TH";
-  if(thaiVoice) u.voice = thaiVoice;
-  u.rate = 0.75;
-  u.pitch = 1;
-  u.volume = 1;
+  var text = "สนามที่ " + courtId + ", " + names.join(", ");
   window.speechSynthesis.cancel();
-  window.speechSynthesis.speak(u);
+  for(var i=0;i<2;i++){
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = "th-TH";
+    if(thaiVoice) u.voice = thaiVoice;
+    u.rate = 0.85;
+    u.pitch = 1;
+    u.volume = 1;
+    window.speechSynthesis.speak(u);
+  }
 }
 function money(n){
   var r = Math.round(n*100)/100;
