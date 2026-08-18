@@ -423,14 +423,13 @@
   body.viewer .q-hint{ display:none; }
   body.viewer .pslot{ cursor:default; }
   body.viewer .pslot:active .card{ transform:none; }
-  body.viewer #scSetup .pick-courts,
-  body.viewer #scSetup .wiz-head,
-  body.viewer #scSetup .wiz-foot{ display:none; }
+  /* viewer เห็นจำนวน/เลขสนามที่แอดมินตั้งไว้เหมือนกัน แค่กดไม่ได้ — สัดส่วนหน้าเท่ากับแอดมิน */
+  body.viewer #scSetup .pick-courts{ pointer-events:none; }
+  body.viewer #scSetup #courtNote{ visibility:hidden; }
+  body.viewer #scSetup #btnToPick{ display:none; }
   body.viewer #scSetup .viewer-wait{ display:block; }
   .viewer-wait{
-    display:none; text-align:center; font-size:var(--fs-sm); color:var(--muted);
-    background:var(--panel); border:1px dashed var(--border); border-radius:var(--radius);
-    padding:clamp(14px,2.5vh,26px) var(--pad); line-height:1.7;
+    display:none; flex:1 1 auto; text-align:center; font-size:var(--fs-sm); color:var(--muted); line-height:1.6;
   }
   .wait-count{ margin-top:9px; font-size:var(--fs-xs); color:var(--accent); font-weight:800; }
   .savechip.online{ border-color:var(--border); color:var(--accent); font-weight:800; }
@@ -737,7 +736,6 @@
     .setup-scroll .rule-card{ grid-area:rule; align-self:center; }
     /* เลือกจำนวนสนาม — แถบล่างสุดเต็มความกว้าง ช่องใหญ่กดง่าย */
     .setup-scroll .pick-courts{ grid-area:pick; }
-    .setup-scroll .viewer-wait{ grid-area:pick; align-self:center; }
     .cchoice{ padding:clamp(22px,5vh,46px) 4px; }
     .cchoice .num{ font-size:clamp(40px,4.2vw,66px); }
     .cchoice .cap{ font-size:var(--fs-md); margin-top:5px; }
@@ -803,11 +801,13 @@
         <div class="court-slots" id="courtSlots"></div>
         <div class="note-line" id="courtNote"></div>
       </div>
-      <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน<br>พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง
+    </div>
+    <div class="wiz-foot">
+      <button class="btn btn-main grow" id="btnToPick">ถัดไป · เลือกผู้เล่น</button>
+      <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน — พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง
         <div class="wait-count" id="viewerWaitCount"></div>
       </div>
     </div>
-    <div class="wiz-foot"><button class="btn btn-main grow" id="btnToPick">ถัดไป · เลือกผู้เล่น</button></div>
   </section>
 
   <!-- ============ STEP 2 : pick players ============ -->
@@ -2092,7 +2092,7 @@ function paintLive(ok){
   } else txt.textContent = "ดูสด";
 }
 function showViewerEmpty(){
-  // ยังไม่มีก๊วน: โชว์หน้าแรก (โลโก้ + ที่สนาม + กติกา) โดย CSS ซ่อนตัวเลือกสนามและปุ่มไว้แล้ว
+  // ยังไม่มีก๊วน: โชว์หน้าแรก (โลโก้ + ที่สนาม + กติกา + ตัวเลือกสนามแบบดูอย่างเดียว) ปุ่มไปต่อถูกซ่อนด้วย CSS
   players = []; courts = [];
   showScreen("setup"); renderSetup();
 }
