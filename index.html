@@ -367,6 +367,11 @@
   .qrow.pickable{ cursor:pointer; }
   .qn{ font-size:var(--fs-xs); font-weight:800; color:var(--muted); min-width:1.5em; }
   .qrow.next .qn{ color:var(--accent); }
+  /* 2 คนถัดไป = แถบสีเต็ม อ่านออกจากอีกฝั่งสนาม (ทุกขนาดจอ) */
+  #scPlay .qrow.next{ background:var(--accent); border-color:var(--accent); }
+  #scPlay .qrow.next .qname{ color:#fff; }
+  #scPlay .qrow.next .qwait{ color:#ffd7e6; }
+  #scPlay .qrow.next .qn{ color:#fff; }
   /* ชื่อยาวให้ขึ้นบรรทัดที่ 2 แทนตัดหาง — บนมือถือชื่อโดนบีบง่าย */
   .qname{
     font-weight:800; font-size:var(--fs-sm); flex:1 1 auto; min-width:0;
@@ -710,10 +715,7 @@
     #scPlay .qname{ font-size:var(--qname-fs, clamp(24px, 1.3vw + 1.5vh + 8px, 42px)); line-height:1.15; }
     #scPlay .qwait{ font-size:var(--qwait-fs, var(--fs-lg)); }
     #scPlay .qmove button{ width:40px; height:42px; font-size:var(--fs-sm); }
-    /* 2 คนถัดไป = แถบสีเต็ม อ่านออกจากอีกฝั่งสนาม */
-    #scPlay .qrow.next{ background:var(--accent); border-color:var(--accent); }
-    #scPlay .qrow.next .qname{ color:#fff; }
-    #scPlay .qrow.next .qwait{ color:#ffd7e6; }
+    /* จอนี้ .qn เป็นวงกลมพื้นขาว — กลับสีเลขให้อ่านออกบนแถบสีเต็ม */
     #scPlay .qrow.next .qn{ background:#fff; color:var(--accent); border-color:#fff; }
     /* \u0e04\u0e34\u0e27\u0e01\u0e34\u0e19\u0e04\u0e2d\u0e25\u0e31\u0e21\u0e19\u0e4c\u0e02\u0e27\u0e32\u0e44\u0e1b\u0e41\u0e25\u0e49\u0e27 \u2014 4 \u0e2a\u0e19\u0e32\u0e21\u0e40\u0e23\u0e35\u0e22\u0e07 2\u00d72 \u0e2a\u0e31\u0e14\u0e2a\u0e48\u0e27\u0e19\u0e2a\u0e19\u0e32\u0e21\u0e2a\u0e27\u0e22\u0e01\u0e27\u0e48\u0e32\u0e40\u0e23\u0e35\u0e22\u0e07\u0e41\u0e16\u0e27\u0e40\u0e14\u0e35\u0e22\u0e27 */
     .courts-grid[data-n="4"]{ grid-template-columns:repeat(2,1fr); grid-auto-rows:1fr; }
