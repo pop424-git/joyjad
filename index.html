@@ -431,7 +431,7 @@
   .viewer-wait{
     display:none; flex:1 1 auto; text-align:center; font-size:var(--fs-xs); color:var(--muted); line-height:1.5;
   }
-  .wait-count{ display:block; font-size:var(--fs-xs); color:var(--accent); font-weight:800; }
+  .wait-count{ color:var(--accent); font-weight:800; }
   .savechip.online{ border-color:var(--border); color:var(--accent); font-weight:800; }
   .savechip.online .eye{ font-size:1em; line-height:1; }
   body.viewer #onlineChip{ display:flex; }
@@ -800,7 +800,7 @@
     </div>
     <div class="wiz-foot">
       <button class="btn btn-main grow" id="btnToPick">ถัดไป · เลือกผู้เล่น</button>
-      <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน <span class="wait-count" id="viewerWaitCount"></span></div>
+      <div class="viewer-wait">รอเริ่มจัดก๊วน<span class="wait-count" id="viewerWaitCount"></span></div>
     </div>
   </section>
 
@@ -2157,7 +2157,7 @@ function adoptRemote(remote, msg){
 function paintOnline(){
   var n = onlineCount, others = Math.max(0, n - 1);
   var wait = document.getElementById("viewerWaitCount");
-  if(wait) wait.textContent = n > 1 ? ("ตอนนี้มี " + n + " คนเปิดรออยู่") : "ตอนนี้มีคุณคนเดียวที่เปิดรออยู่";
+  if(wait) wait.textContent = n > 1 ? (" · มี " + n + " คนรออยู่") : " · มีคุณคนเดียวรออยู่";
   var chip = document.getElementById("onlineChip"), txt = document.getElementById("onlineText");
   if(chip && txt){
     chip.style.display = n > 0 ? "flex" : "none";
