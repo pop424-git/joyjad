@@ -423,18 +423,20 @@
   body.viewer .q-hint{ display:none; }
   body.viewer .pslot{ cursor:default; }
   body.viewer .pslot:active .card{ transform:none; }
-  /* viewer ไม่ได้ตั้งสนามเอง — ซ่อนตัวเลือกสนามกับปุ่มไปต่อ แล้วขึ้นข้อความรอแทนที่ตรงนั้น */
-  body.viewer #scSetup .pick-courts,
-  body.viewer #scSetup .wiz-foot{ display:none; }
-  body.viewer #scSetup .viewer-wait{ display:block; }
+  /* viewer ไม่ได้ตั้งสนามเอง — คงพื้นที่ตัวเลือกสนามกับปุ่มไว้ให้สัดส่วนหน้าเท่าแอดมิน
+     แค่ซ่อนเนื้อหาแล้ววางข้อความรอทับกลางช่องที่โล่งนั้น */
+  body.viewer #scSetup .pick-courts{ position:relative; }
+  body.viewer #scSetup .pick-courts > :not(.viewer-wait){ visibility:hidden; }
+  body.viewer #scSetup .wiz-foot{ visibility:hidden; }
+  body.viewer #scSetup .viewer-wait{ display:flex; }
   .viewer-wait{
-    display:none; flex:0 0 auto; text-align:center;
-    background:var(--panel); border:1px dashed var(--border); border-radius:var(--radius);
-    padding:clamp(14px,2.5vh,26px) var(--pad);
+    display:none; position:absolute; inset:0; text-align:center;
+    flex-direction:column; align-items:center; justify-content:center;
+    padding:var(--pad);
   }
-  .vw-title{ font-size:var(--fs-md); font-weight:800; color:var(--accent); }
-  .vw-sub{ margin-top:5px; font-size:var(--fs-xs); color:var(--muted); line-height:1.5; }
-  .wait-count{ margin-top:9px; font-size:var(--fs-sm); color:var(--text); font-weight:800; }
+  .vw-title{ font-size:var(--fs-lg); font-weight:800; color:var(--accent); }
+  .vw-sub{ margin-top:6px; font-size:var(--fs-sm); color:var(--muted); line-height:1.5; }
+  .wait-count{ margin-top:12px; font-size:var(--fs-md); color:var(--text); font-weight:800; }
   .savechip.online{ border-color:var(--border); color:var(--accent); font-weight:800; }
   .savechip.online .eye{ font-size:1em; line-height:1; }
   body.viewer #onlineChip{ display:flex; }
@@ -799,11 +801,11 @@
         <div class="court-choices" id="courtChoices"></div>
         <div class="court-slots" id="courtSlots"></div>
         <div class="note-line" id="courtNote"></div>
-      </div>
-      <div class="viewer-wait">
-        <div class="vw-title">รอเริ่มจัดก๊วน</div>
-        <div class="vw-sub">พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง</div>
-        <div class="wait-count" id="viewerWaitCount"></div>
+        <div class="viewer-wait">
+          <div class="vw-title">รอเริ่มจัดก๊วน</div>
+          <div class="vw-sub">พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง</div>
+          <div class="wait-count" id="viewerWaitCount"></div>
+        </div>
       </div>
     </div>
     <div class="wiz-foot">
