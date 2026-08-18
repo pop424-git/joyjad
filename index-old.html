@@ -1,0 +1,831 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0f2417">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="ตัวช่วยจัดคิวก๊วนแบดมินตัน 2 สนาม เข้า 2 ออก 2">
+<title>จัดคิวตีแบด</title>
+<style>
+  :root{
+    --court-green:#2e7d4f;
+    --court-green-dark:#1f5c39;
+    --bg:#0f2417;
+    --panel:#153524;
+    --panel2:#123021;
+    --border:#274a35;
+    --card:#ffffff;
+    --accent:#ffb703;
+    --out:#e05252;
+    --in:#2fa84f;
+    --text:#eafff2;
+    --muted:#9fc9ac;
+
+    --fs-xs: clamp(9px,  0.55vw + 0.35vh + 5px, 13px);
+    --fs-sm: clamp(11px, 0.65vw + 0.4vh  + 6px, 15px);
+    --fs-md: clamp(12px, 0.8vw  + 0.5vh  + 6px, 18px);
+    --fs-lg: clamp(14px, 1.0vw  + 0.6vh  + 6px, 22px);
+    --gap:   clamp(5px,  0.7vw, 12px);
+    --pad:   clamp(6px,  0.9vw, 14px);
+    --radius: clamp(9px, 1.1vw, 16px);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{
+    margin:0; padding:0; height:100%; width:100%;
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+    overflow:hidden; overscroll-behavior:none;
+  }
+  body{ user-select:none; -webkit-user-select:none; }
+  input,textarea{ user-select:text; -webkit-user-select:text; }
+
+  #app{
+    display:flex; flex-direction:column;
+    height:100dvh; width:100vw;
+    padding:calc(var(--pad) + env(safe-area-inset-top)) calc(var(--pad) + env(safe-area-inset-right))
+            calc(var(--pad) + env(safe-area-inset-bottom)) calc(var(--pad) + env(safe-area-inset-left));
+    gap:var(--gap);
+  }
+
+  /* ---------- header ---------- */
+  header{ display:flex; align-items:center; justify-content:space-between; gap:var(--gap); flex:0 0 auto; flex-wrap:wrap; }
+  header h1{ font-size:var(--fs-lg); margin:0; font-weight:800; letter-spacing:.2px; white-space:nowrap; }
+  header h1 .r{ color:var(--accent); }
+  .stats{ display:flex; gap:clamp(8px,1.4vw,20px); font-size:var(--fs-xs); color:var(--muted); white-space:nowrap; }
+  .stats b{ color:var(--text); font-size:var(--fs-sm); }
+  .header-btns{ display:flex; gap:6px; margin-left:auto; align-items:center; }
+  .icon-btn{
+    background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    padding:clamp(6px,.8vh,10px) clamp(9px,1.2vw,16px); border-radius:10px;
+    font-size:var(--fs-xs); cursor:pointer; white-space:nowrap; font-family:inherit;
+  }
+  .icon-btn:active{ background:#1c4530; }
+
+  /* save status light */
+  .savechip{
+    display:flex; align-items:center; gap:6px; font-size:var(--fs-xs); color:var(--muted);
+    background:var(--panel2); border:1px solid var(--border); border-radius:999px;
+    padding:clamp(5px,.7vh,9px) clamp(9px,1vw,13px); white-space:nowrap; cursor:pointer;
+  }
+  .savechip .dot{ width:9px; height:9px; border-radius:50%; background:#3f6b50; flex:0 0 auto; transition:background .2s, box-shadow .2s; }
+  .savechip.ok .dot{ background:var(--in); }
+  .savechip.flash .dot{ background:#5cf58a; box-shadow:0 0 0 4px rgba(47,168,79,.25); }
+  .savechip.bad{ border-color:#7a3030; color:#ffbcbc; }
+  .savechip.bad .dot{ background:var(--out); box-shadow:0 0 0 4px rgba(224,82,82,.2); }
+
+  /* ---------- courts ---------- */
+  .courts-row{ display:flex; gap:var(--gap); flex:1 1 auto; min-height:0; min-width:0; }
+  .court{
+    flex:1 1 0; min-width:0; min-height:0;
+    background:linear-gradient(180deg,var(--court-green),var(--court-green-dark));
+    border-radius:var(--radius); position:relative; padding:var(--pad);
+    display:flex; flex-direction:column; border:2px solid #0d2818;
+    box-shadow:inset 0 0 0 2px rgba(255,255,255,.05);
+  }
+  .court-head{ display:flex; align-items:center; justify-content:space-between; gap:6px; margin-bottom:5px; flex:0 0 auto; }
+  .court-title{ font-weight:800; font-size:var(--fs-sm); color:#fff; white-space:nowrap; }
+  .mini-btn{
+    background:rgba(255,255,255,.16); color:#fff; border:none;
+    padding:clamp(5px,.7vh,9px) clamp(8px,1vw,14px);
+    border-radius:8px; font-size:var(--fs-xs); cursor:pointer; white-space:nowrap; font-family:inherit;
+  }
+  .mini-btn:active{ background:rgba(255,255,255,.3); }
+
+  .court-body{
+    flex:1 1 auto; display:flex; position:relative; border-radius:8px;
+    border:2px dashed rgba(255,255,255,.32); min-height:0; min-width:0;
+  }
+  .net{ position:absolute; left:50%; top:0; bottom:0; border-left:3px dashed rgba(255,255,255,.5); transform:translateX(-1.5px); }
+  .team{ flex:1 1 0; display:flex; flex-direction:column; gap:5px; padding:5px; min-height:0; min-width:0; }
+
+  .slot{
+    flex:1 1 0; min-height:0; min-width:0;
+    background:rgba(255,255,255,.94); border-radius:10px;
+    display:flex; align-items:center; justify-content:center; flex-direction:column; gap:2px;
+    font-weight:800; font-size:var(--fs-md); color:#123021; cursor:pointer;
+    border:3px solid transparent; position:relative; padding:3px;
+    overflow:hidden; text-align:center; line-height:1.15;
+    transition:transform .08s ease, background .12s ease;
+  }
+  .slot:active{ transform:scale(.97); }
+  .slot .nm{ max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .slot.empty{ background:rgba(255,255,255,.18); color:rgba(255,255,255,.8); font-weight:600; font-size:var(--fs-sm); border-style:dashed; border-color:rgba(255,255,255,.42); }
+  .slot.out-selected{ border-color:var(--out); background:#ffe1e1; }
+  .slot .badge{ font-size:var(--fs-xs); font-weight:600; color:#5a7a68; white-space:nowrap; }
+  .slot.out-selected .badge{ color:#b03030; }
+  .badge .long{ display:inline; }
+  .badge .short{ display:none; }
+
+  .swapbar{
+    display:none; align-items:center; justify-content:space-between; gap:6px; flex-wrap:wrap;
+    background:rgba(0,0,0,.3); border-radius:9px; padding:5px 8px; margin-top:5px; flex:0 0 auto;
+  }
+  .swapbar.show{ display:flex; }
+  .swapbar .info{ font-size:var(--fs-xs); color:#fff; white-space:nowrap; }
+  .swapbar .btns{ display:flex; gap:5px; margin-left:auto; }
+  .btn-confirm{
+    background:var(--accent); color:#3a2a00; border:none;
+    padding:clamp(5px,.8vh,10px) clamp(9px,1.2vw,16px);
+    border-radius:8px; font-weight:800; font-size:var(--fs-xs); cursor:pointer; font-family:inherit;
+  }
+  .btn-confirm:disabled{ opacity:.4; }
+  .btn-cancel{
+    background:rgba(255,255,255,.18); color:#fff; border:none;
+    padding:clamp(5px,.8vh,10px) clamp(8px,1vw,14px);
+    border-radius:8px; font-size:var(--fs-xs); cursor:pointer; font-family:inherit;
+  }
+
+  /* ---------- waiting ---------- */
+  .waiting-panel{
+    flex:0 0 auto; background:var(--panel); border-radius:var(--radius);
+    padding:var(--pad); display:flex; flex-direction:column; gap:5px;
+    max-height:min(34vh,240px); border:1px solid var(--border);
+  }
+  .waiting-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .waiting-title{ font-weight:800; font-size:var(--fs-sm); white-space:nowrap; }
+  .waiting-hint{ font-size:var(--fs-xs); color:var(--muted); text-align:right; flex:1 1 140px; min-width:0; }
+  .chips{ display:flex; flex-wrap:wrap; gap:6px; overflow-y:auto; padding:2px 0; -webkit-overflow-scrolling:touch; }
+  .chip{
+    background:var(--card); color:#153524; border-radius:11px;
+    padding:clamp(5px,.9vh,10px) clamp(8px,1.1vw,14px);
+    font-weight:800; font-size:var(--fs-sm); cursor:pointer;
+    display:flex; align-items:center; gap:5px; border:3px solid transparent; white-space:nowrap;
+  }
+  .chip .n{ font-size:var(--fs-xs); font-weight:600; color:#6b8a77; background:#eaf5ee; border-radius:6px; padding:1px 5px; }
+  .chip.in-selected{ border-color:var(--in); background:#e2f7e6; }
+  .chip.next{ box-shadow:0 0 0 2px var(--accent) inset; }
+  .chip.disabled{ opacity:.38; }
+  .empty-msg{ color:var(--muted); font-size:var(--fs-sm); padding:4px 2px; }
+
+  /* ---------- overlays ---------- */
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; align-items:center; justify-content:center; z-index:50; padding:16px; }
+  .overlay.show{ display:flex; }
+  .drawer{
+    background:#0f2417; border:1px solid var(--border); border-radius:16px;
+    width:min(620px,100%); max-height:86dvh; overflow-y:auto; padding:16px;
+    -webkit-overflow-scrolling:touch;
+  }
+  .drawer h2{ margin:0 0 10px; font-size:var(--fs-lg); }
+  .plist{ display:flex; flex-direction:column; gap:6px; }
+  .prow{ display:flex; align-items:center; justify-content:space-between; gap:10px; background:var(--panel2); padding:8px 10px; border-radius:10px; }
+  .prow .pname{ font-size:var(--fs-sm); font-weight:700; }
+  .prow .pmeta{ font-size:var(--fs-xs); color:var(--muted); margin-top:2px; }
+  .toggle{ width:46px; height:26px; border-radius:13px; background:#3a5c48; position:relative; cursor:pointer; flex:0 0 auto; }
+  .toggle.on{ background:var(--in); }
+  .toggle .dot{ position:absolute; top:2px; left:2px; width:22px; height:22px; border-radius:50%; background:#fff; transition:left .15s; }
+  .toggle.on .dot{ left:22px; }
+  .addrow{ display:flex; gap:8px; margin-top:12px; }
+  .addrow input{ flex:1; min-width:0; padding:10px 12px; border-radius:8px; border:1px solid #2a5038; background:#0c2116; color:#fff; font-size:16px; font-family:inherit; }
+  .addrow button{ background:var(--accent); border:none; padding:10px 16px; border-radius:8px; font-weight:800; color:#3a2a00; cursor:pointer; font-family:inherit; font-size:var(--fs-sm); }
+  .del-btn{ background:none; border:none; color:#e88; font-size:16px; cursor:pointer; padding:2px 6px; }
+  .close-drawer{ margin-top:14px; width:100%; padding:11px; background:var(--panel2); border:1px solid var(--border); color:#fff; border-radius:10px; font-size:var(--fs-sm); cursor:pointer; font-family:inherit; }
+  .note{ font-size:var(--fs-xs); color:var(--muted); margin-top:10px; line-height:1.6; }
+
+  /* share/backup drawer */
+  .sec{ background:var(--panel2); border:1px solid var(--border); border-radius:12px; padding:12px; margin-bottom:10px; }
+  .sec h3{ margin:0 0 4px; font-size:var(--fs-sm); font-weight:800; }
+  .sec p{ margin:0 0 10px; font-size:var(--fs-xs); color:var(--muted); line-height:1.6; }
+  .btn-row{ display:flex; gap:8px; flex-wrap:wrap; }
+  .btn-primary{ background:var(--accent); color:#3a2a00; border:none; padding:10px 14px; border-radius:9px; font-weight:800; font-size:var(--fs-sm); cursor:pointer; font-family:inherit; flex:1 1 auto; }
+  .btn-second{ background:#1c4530; color:#fff; border:1px solid var(--border); padding:10px 14px; border-radius:9px; font-size:var(--fs-sm); cursor:pointer; font-family:inherit; flex:1 1 auto; }
+  .codebox{
+    width:100%; min-height:74px; resize:vertical; padding:9px 11px; border-radius:9px;
+    border:1px solid #2a5038; background:#0c2116; color:#cfe9d8;
+    font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:12px; line-height:1.45;
+    word-break:break-all; margin-bottom:8px;
+  }
+  .status-line{ display:flex; align-items:center; gap:8px; font-size:var(--fs-sm); font-weight:700; margin-bottom:4px; }
+  .status-line .dot{ width:10px; height:10px; border-radius:50%; background:var(--in); }
+  .status-line.bad .dot{ background:var(--out); }
+
+  /* toast */
+  #toast{
+    position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
+    background:#0b2f1d; border:1px solid var(--in); color:#eafff2;
+    padding:11px 18px; border-radius:11px; font-size:var(--fs-sm); font-weight:700;
+    opacity:0; pointer-events:none; transition:opacity .18s, transform .18s; z-index:90; max-width:88vw; text-align:center;
+  }
+  #toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  #toast.err{ border-color:var(--out); background:#3a1414; }
+
+  /* ---------- responsive ---------- */
+  @media (max-aspect-ratio: 1/1){
+    .courts-row{ flex-direction:column; }
+    .team{ flex-direction:row; }
+    .waiting-panel{ max-height:min(30vh,200px); }
+  }
+  @media (max-width: 560px){
+    .badge .long{ display:none; }
+    .badge .short{ display:inline; }
+    .waiting-hint{ display:none; }
+    .savechip span:not(.dot){ display:none; }
+    .savechip{ padding:8px; }
+  }
+  @media (max-height: 460px){
+    .waiting-panel{ max-height:34dvh; }
+    .badge{ display:none; }
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>จัดคิวตีแบด<span class="r">🏸</span></h1>
+    <div class="stats">
+      <div>กำลังตี <b id="statPlaying">0</b></div>
+      <div>รอคิว <b id="statWaiting">0</b></div>
+      <div>ไม่มา <b id="statOut">0</b></div>
+    </div>
+    <div class="header-btns">
+      <div class="savechip" id="saveChip" title="สถานะการบันทึก"><span class="dot"></span><span id="saveText">พร้อม</span></div>
+      <button class="icon-btn" id="btnShare">แชร์/สำรอง</button>
+      <button class="icon-btn" id="btnManage">รายชื่อ</button>
+      <button class="icon-btn" id="btnReset">รีเซ็ต</button>
+    </div>
+  </header>
+
+  <div class="courts-row">
+    <div class="court" id="court-1"></div>
+    <div class="court" id="court-2"></div>
+  </div>
+
+  <div class="waiting-panel">
+    <div class="waiting-head">
+      <div class="waiting-title">รอคิวนอกสนาม</div>
+      <div class="waiting-hint" id="waitingHint">แตะคนในสนามที่จะออกก่อน แล้วแตะคนรอคิวเพื่อเข้าแทน</div>
+    </div>
+    <div class="chips" id="waitingChips"></div>
+  </div>
+</div>
+
+<!-- manage players -->
+<div class="overlay" id="overlay">
+  <div class="drawer">
+    <h2>จัดการรายชื่อผู้เล่น</h2>
+    <div class="plist" id="plist"></div>
+    <div class="addrow">
+      <input id="newName" placeholder="เพิ่มชื่อผู้เล่นใหม่" maxlength="20" autocomplete="off">
+      <button id="btnAdd">เพิ่ม</button>
+    </div>
+    <div class="note">ปิดสวิตช์ = คนนี้ไม่มาวันนี้ (จะไม่ขึ้นในสนามและคิวรอ) เปิดกลับมาจะไปต่อท้ายคิว</div>
+    <button class="close-drawer" id="btnClose">ปิด</button>
+  </div>
+</div>
+
+<!-- share / backup -->
+<div class="overlay" id="shareOverlay">
+  <div class="drawer">
+    <h2>แชร์ / สำรองข้อมูล</h2>
+
+    <div class="sec">
+      <div class="status-line" id="statusLine"><span class="dot"></span><span id="statusText">—</span></div>
+      <p id="statusDetail"></p>
+    </div>
+
+    <div class="sec">
+      <h3>ส่งให้เพื่อนดู</h3>
+      <p>คัดลอกลิงก์นี้ส่งในไลน์กลุ่ม ใครกดเปิดก็จะเห็นสนามและคิว <b>ณ ตอนที่คุณกดคัดลอก</b> (เป็นภาพนิ่ง ไม่อัปเดตตามแบบเรียลไทม์)</p>
+      <div class="btn-row">
+        <button class="btn-primary" id="btnCopyLink">คัดลอกลิงก์</button>
+        <button class="btn-second" id="btnShareNative">แชร์…</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>สำรองไว้เอง</h3>
+      <p>เอาโค้ดนี้ไปเก็บในโน้ต หรือวางในเครื่องอื่นเพื่อย้ายข้อมูล</p>
+      <textarea class="codebox" id="backupCode" readonly spellcheck="false"></textarea>
+      <div class="btn-row">
+        <button class="btn-primary" id="btnCopyCode">คัดลอกโค้ด</button>
+        <button class="btn-second" id="btnDownload">ดาวน์โหลดไฟล์</button>
+      </div>
+    </div>
+
+    <div class="sec">
+      <h3>กู้คืน</h3>
+      <p>วางโค้ดสำรองที่นี่แล้วกดกู้คืน (ข้อมูลปัจจุบันจะถูกทับ)</p>
+      <textarea class="codebox" id="restoreCode" placeholder="วางโค้ดสำรองตรงนี้" spellcheck="false"></textarea>
+      <div class="btn-row">
+        <button class="btn-primary" id="btnRestore">กู้คืนจากโค้ด</button>
+        <button class="btn-second" id="btnUpload">เลือกไฟล์สำรอง</button>
+      </div>
+      <input type="file" id="fileInput" accept=".json,.txt,application/json,text/plain" style="display:none">
+    </div>
+
+    <button class="close-drawer" id="btnShareClose">ปิด</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ================= storage ================= */
+var KEY = "badminton-queue-v1";
+var storageOK = (function(){
+  try { window.localStorage.setItem("__t","1"); window.localStorage.removeItem("__t"); return true; }
+  catch(e){ return false; }
+})();
+var lastSaveAt = null, saveFailed = false;
+
+function save(){
+  if(!storageOK){ saveFailed = true; paintChip(); return; }
+  try{
+    localStorage.setItem(KEY, JSON.stringify(snapshot()));
+    lastSaveAt = new Date(); saveFailed = false;
+    paintChip(true);
+  }catch(e){ saveFailed = true; paintChip(); }
+}
+function loadSaved(){
+  if(!storageOK) return null;
+  try{
+    var raw = localStorage.getItem(KEY);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+
+/* ================= state ================= */
+var initialNames = ["จอย","อุ้ย","ป็อป","ตาล","ยี่หวา","แหวน","พี","ภู","มะขาม","ต้อม","เฟรม","เอก","นาย","โนช"];
+var players = [], turnCounter = 0;
+var court1 = [null,null,null,null], court2 = [null,null,null,null];
+var sel = { court:null, out:[], in:[] };
+
+function snapshot(){
+  return { v:1, players:players, turnCounter:turnCounter, court1:court1, court2:court2, savedAt:Date.now() };
+}
+
+function applySnapshot(d){
+  if(!d || !Array.isArray(d.players) || !Array.isArray(d.court1) || !Array.isArray(d.court2)) return false;
+  if(d.court1.length !== 4 || d.court2.length !== 4) return false;
+  if(!d.players.length) return false;
+  players = d.players.map(function(p){
+    return {
+      id: p.id|0, name: String(p.name || "?"),
+      attending: p.attending !== false,
+      status: p.status || "waiting",
+      games: p.games|0, consec: p.consec|0, order: p.order|0
+    };
+  });
+  turnCounter = d.turnCounter|0;
+  court1 = d.court1.slice(0,4);
+  court2 = d.court2.slice(0,4);
+  var ids = {}; players.forEach(function(p){ ids[p.id] = true; });
+  court1 = court1.map(function(x){ return ids[x] ? x : null; });
+  court2 = court2.map(function(x){ return ids[x] ? x : null; });
+  // a player can't be on both courts
+  court2 = court2.map(function(x){ return court1.indexOf(x) >= 0 ? null : x; });
+  players.forEach(function(p){
+    if(!p.attending){ p.status = "out"; return; }
+    p.status = court1.indexOf(p.id) >= 0 ? "court1" : (court2.indexOf(p.id) >= 0 ? "court2" : "waiting");
+  });
+  if(turnCounter <= 0) turnCounter = players.length;
+  sel = { court:null, out:[], in:[] };
+  return true;
+}
+
+function freshStart(){
+  players = initialNames.map(function(name,i){
+    return { id:i+1, name:name, attending:true, status:"waiting", games:0, consec:0, order:i };
+  });
+  turnCounter = players.length;
+  autoFillCourts();
+}
+
+function autoFillCourts(){
+  court1 = [null,null,null,null]; court2 = [null,null,null,null];
+  var attending = players.filter(function(p){ return p.attending; }).sort(function(a,b){ return a.order-b.order; });
+  players.forEach(function(p){ p.games=0; p.consec=0; p.status = p.attending ? "waiting" : "out"; });
+  var idx=0, s;
+  for(s=0; s<4 && idx<attending.length; s++, idx++){ court1[s]=attending[idx].id; attending[idx].status="court1"; attending[idx].consec=1; }
+  for(s=0; s<4 && idx<attending.length; s++, idx++){ court2[s]=attending[idx].id; attending[idx].status="court2"; attending[idx].consec=1; }
+  turnCounter = 0;
+  for(; idx<attending.length; idx++){ attending[idx].order = turnCounter++; }
+  sel = { court:null, out:[], in:[] };
+}
+
+function getP(id){ for(var i=0;i<players.length;i++){ if(players[i].id===id) return players[i]; } return null; }
+function waitingList(){
+  return players.filter(function(p){ return p.attending && p.status==="waiting"; })
+                .sort(function(a,b){ return a.order-b.order; });
+}
+function courtArr(c){ return c===1 ? court1 : court2; }
+function emptySlots(c){ return courtArr(c).filter(function(x){ return x===null; }).length; }
+function capacity(c){ var e = emptySlots(c); return sel.court===c ? e + sel.out.length : e; }
+
+/* ================= share codec (compact + URL-safe) ================= */
+function b64enc(str){
+  var bytes = new TextEncoder().encode(str), bin = "";
+  for(var i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+}
+function b64dec(s){
+  s = String(s).trim().replace(/-/g,"+").replace(/_/g,"/");
+  while(s.length % 4) s += "=";
+  var bin = atob(s), bytes = new Uint8Array(bin.length);
+  for(var i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return new TextDecoder().decode(bytes);
+}
+function encodeState(){
+  // compact: 1|turnCounter|c1|c2|id,name,att,games,consec,order~...
+  var c = function(a){ return a.map(function(x){ return x===null ? "-" : x; }).join(","); };
+  var pl = players.map(function(p){
+    return [p.id, encodeURIComponent(p.name), p.attending?1:0, p.games, p.consec, p.order].join(",");
+  }).join("~");
+  return b64enc(["1", turnCounter, c(court1), c(court2), pl].join("|"));
+}
+function decodeState(code){
+  var txt = b64dec(code);
+  var parts = txt.split("|");
+  if(parts[0] !== "1" || parts.length < 5) throw new Error("format");
+  var c = function(s){ return s.split(",").map(function(x){ return x==="-" ? null : parseInt(x,10); }); };
+  var pl = parts[4].split("~").map(function(row){
+    var f = row.split(",");
+    return {
+      id: parseInt(f[0],10), name: decodeURIComponent(f[1]),
+      attending: f[2] === "1", status: "waiting",
+      games: parseInt(f[3],10)||0, consec: parseInt(f[4],10)||0, order: parseInt(f[5],10)||0
+    };
+  });
+  return { v:1, players:pl, turnCounter:parseInt(parts[1],10)||0, court1:c(parts[2]), court2:c(parts[3]) };
+}
+function shareURL(){
+  return location.origin + location.pathname + "#s=" + encodeState();
+}
+
+/* ================= interactions ================= */
+function tapSlot(court, i){
+  var arr = courtArr(court), pid = arr[i];
+  if(sel.court !== court) sel = { court:court, out:[], in:[] };
+  if(pid !== null){
+    var at = sel.out.indexOf(pid);
+    if(at >= 0){
+      sel.out.splice(at,1);
+      var cap = capacity(court);
+      if(sel.in.length > cap) sel.in = sel.in.slice(0, cap);
+    } else sel.out.push(pid);
+  }
+  render();
+}
+function tapWaiting(pid){
+  if(sel.court === null){ flashHint("แตะผู้เล่นในสนามก่อน เพื่อเลือกว่าจะเข้าสนามไหน"); return; }
+  var at = sel.in.indexOf(pid);
+  if(at >= 0){ sel.in.splice(at,1); render(); return; }
+  var cap = capacity(sel.court);
+  if(cap === 0){ flashHint("สนามเต็ม — แตะคนในสนามที่จะออกก่อน"); return; }
+  if(sel.in.length >= cap){ flashHint("เลือกครบ " + cap + " คนแล้ว แตะชื่อที่เลือกไว้ซ้ำเพื่อยกเลิก"); return; }
+  sel.in.push(pid);
+  render();
+}
+var hintTimer = null;
+function flashHint(msg){
+  var h = document.getElementById("waitingHint");
+  if(!h) return;
+  if(hintTimer) clearTimeout(hintTimer);
+  if(!h.dataset.orig) h.dataset.orig = h.textContent;
+  h.textContent = msg; h.style.color = "var(--accent)"; h.style.display = "block";
+  hintTimer = setTimeout(function(){ h.textContent = h.dataset.orig; h.style.color=""; h.style.display=""; }, 2200);
+}
+function suggest(court){
+  sel = { court:court, out:[], in:[] };
+  var arr = courtArr(court);
+  if(emptySlots(court) === 0){
+    var onCourt = arr.filter(function(x){ return x!==null; }).map(getP);
+    onCourt.sort(function(a,b){ return (b.consec-a.consec) || (b.games-a.games); });
+    sel.out = onCourt.slice(0, Math.min(2, onCourt.length)).map(function(p){ return p.id; });
+  }
+  sel.in = waitingList().slice(0, capacity(court)).map(function(p){ return p.id; });
+  render();
+}
+function cancelSel(){ sel = { court:null, out:[], in:[] }; render(); }
+function confirmSwap(){
+  var court = sel.court;
+  if(court === null) return;
+  var cap = capacity(court);
+  if(cap === 0 || sel.in.length !== cap) return;
+  var arr = courtArr(court), i, j;
+  for(i=0;i<4;i++){
+    var pid = arr[i];
+    if(pid === null) continue;
+    var p = getP(pid);
+    if(!p){ arr[i]=null; continue; }
+    if(sel.out.indexOf(pid) >= 0){
+      p.games += 1; p.consec = 0; p.status = "waiting"; p.order = turnCounter++;
+      arr[i] = null;
+    } else { p.games += 1; p.consec += 1; }
+  }
+  var queue = sel.in.slice();
+  for(j=0;j<4 && queue.length;j++){
+    if(arr[j] === null){
+      var np = getP(queue.shift());
+      if(!np) continue;
+      np.status = "court" + court; np.consec = 1; arr[j] = np.id;
+    }
+  }
+  sel = { court:null, out:[], in:[] };
+  render();
+}
+
+/* ================= manage ================= */
+function openManage(){ renderManage(); document.getElementById("overlay").classList.add("show"); }
+function closeManage(){ document.getElementById("overlay").classList.remove("show"); render(); }
+function toggleAttend(id){
+  var p = getP(id);
+  if(!p) return;
+  p.attending = !p.attending;
+  if(p.attending){ p.status="waiting"; p.consec=0; p.order=turnCounter++; }
+  else{
+    var i1 = court1.indexOf(p.id); if(i1>=0) court1[i1]=null;
+    var i2 = court2.indexOf(p.id); if(i2>=0) court2[i2]=null;
+    p.status="out"; p.consec=0;
+    var o = sel.out.indexOf(p.id); if(o>=0) sel.out.splice(o,1);
+    var n = sel.in.indexOf(p.id);  if(n>=0) sel.in.splice(n,1);
+    if(sel.court !== null && sel.in.length > capacity(sel.court)) sel.in = sel.in.slice(0, capacity(sel.court));
+  }
+  renderManage(); render();
+}
+function addPlayer(){
+  var input = document.getElementById("newName");
+  var name = input.value.trim();
+  if(!name) return;
+  var maxId = 0;
+  players.forEach(function(p){ if(p.id > maxId) maxId = p.id; });
+  players.push({ id:maxId+1, name:name, attending:true, status:"waiting", games:0, consec:0, order:turnCounter++ });
+  input.value = "";
+  renderManage(); render();
+}
+function removePlayer(id){
+  var p = getP(id);
+  if(!p || !confirm("ลบ " + p.name + " ออกจากรายชื่อถาวร?")) return;
+  var i1 = court1.indexOf(id); if(i1>=0) court1[i1]=null;
+  var i2 = court2.indexOf(id); if(i2>=0) court2[i2]=null;
+  players = players.filter(function(x){ return x.id !== id; });
+  var o = sel.out.indexOf(id); if(o>=0) sel.out.splice(o,1);
+  var n = sel.in.indexOf(id);  if(n>=0) sel.in.splice(n,1);
+  renderManage(); render();
+}
+function resetSession(){
+  if(!confirm("เริ่มก๊วนใหม่? สถิติจำนวนเกมจะถูกล้าง และจัดคนลงสนามใหม่ตามรายชื่อที่มาวันนี้")) return;
+  autoFillCourts(); render();
+}
+
+/* ================= share / backup ================= */
+function openShare(){
+  document.getElementById("backupCode").value = encodeState();
+  document.getElementById("restoreCode").value = "";
+  paintStatus();
+  document.getElementById("shareOverlay").classList.add("show");
+}
+function closeShare(){ document.getElementById("shareOverlay").classList.remove("show"); }
+
+function copyText(text, okMsg){
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.cssText = "position:fixed;top:0;left:0;opacity:0";
+    document.body.appendChild(ta);
+    ta.focus(); ta.select(); ta.setSelectionRange(0, text.length);
+    var done = false;
+    try { done = document.execCommand("copy"); } catch(e){}
+    document.body.removeChild(ta);
+    toast(done ? okMsg : "คัดลอกอัตโนมัติไม่ได้ — กดค้างที่กล่องโค้ดแล้วเลือก Copy", !done);
+  }
+  if(navigator.clipboard && window.isSecureContext){
+    navigator.clipboard.writeText(text).then(function(){ toast(okMsg); }, fallback);
+  } else fallback();
+}
+
+function doRestore(code){
+  code = String(code || "").trim();
+  if(!code){ toast("ยังไม่ได้วางโค้ด", true); return; }
+  // accept a full share link too
+  var m = code.match(/#s=([A-Za-z0-9_-]+)/);
+  if(m) code = m[1];
+  var data;
+  try{
+    data = code.charAt(0) === "{" ? JSON.parse(code) : decodeState(code);
+  }catch(e){ toast("โค้ดไม่ถูกต้อง หรือคัดลอกมาไม่ครบ", true); return; }
+  if(!applySnapshot(data)){ toast("โค้ดไม่ถูกต้อง", true); return; }
+  render(); renderManage(); closeShare();
+  toast("กู้คืนข้อมูลแล้ว");
+}
+
+function downloadBackup(){
+  var d = new Date();
+  var pad = function(n){ return (n<10?"0":"") + n; };
+  var stamp = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + "-" + pad(d.getHours()) + pad(d.getMinutes());
+  var blob = new Blob([JSON.stringify(snapshot(), null, 2)], { type:"application/json" });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement("a");
+  a.href = url; a.download = "badminton-" + stamp + ".json";
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+  toast("ดาวน์โหลดไฟล์สำรองแล้ว");
+}
+
+/* ================= toast + status ================= */
+var toastTimer = null;
+function toast(msg, isErr){
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "show" + (isErr ? " err" : "");
+  if(toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(function(){ t.className = ""; }, 2600);
+}
+
+var flashTimer = null;
+function paintChip(flash){
+  var chip = document.getElementById("saveChip");
+  var txt = document.getElementById("saveText");
+  if(!storageOK || saveFailed){
+    chip.className = "savechip bad";
+    txt.textContent = "ไม่ได้บันทึก";
+    return;
+  }
+  chip.className = "savechip ok" + (flash ? " flash" : "");
+  if(flash){
+    if(flashTimer) clearTimeout(flashTimer);
+    flashTimer = setTimeout(function(){ chip.className = "savechip ok"; }, 450);
+  }
+  if(lastSaveAt){
+    var h = lastSaveAt.getHours(), m = lastSaveAt.getMinutes();
+    txt.textContent = "บันทึก " + (h<10?"0":"") + h + ":" + (m<10?"0":"") + m;
+  } else txt.textContent = "พร้อม";
+}
+
+function paintStatus(){
+  var line = document.getElementById("statusLine");
+  var txt  = document.getElementById("statusText");
+  var det  = document.getElementById("statusDetail");
+  if(!storageOK || saveFailed){
+    line.className = "status-line bad";
+    txt.textContent = "บันทึกอัตโนมัติไม่ทำงาน";
+    det.textContent = "เบราว์เซอร์นี้ปิดการเก็บข้อมูลไว้ (มักเกิดกับ Safari โหมด Private Browsing) ถ้ารีเฟรชข้อมูลจะหาย — ให้กดคัดลอกโค้ดสำรองเก็บไว้ก่อน";
+  } else {
+    line.className = "status-line";
+    txt.textContent = "บันทึกอัตโนมัติทำงานปกติ";
+    det.textContent = "ข้อมูลถูกเก็บไว้ในเบราว์เซอร์ของเครื่องนี้เท่านั้น ปิดแท็บแล้วเปิดใหม่ยังอยู่ครบ แต่เครื่องอื่นจะไม่เห็นค่าเดียวกัน เพราะแอปนี้ไม่มีเซิร์ฟเวอร์เก็บข้อมูลส่วนกลาง — ใช้ปุ่มด้านล่างส่งสถานะให้เครื่องอื่นได้";
+  }
+}
+
+/* ================= render ================= */
+function esc(s){
+  return String(s).replace(/[&<>"']/g, function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+  });
+}
+function slotHTML(court, i){
+  var pid = courtArr(court)[i];
+  var blank = '<div class="slot empty" data-court="'+court+'" data-slot="'+i+'">ว่าง</div>';
+  if(pid === null) return blank;
+  var p = getP(pid);
+  if(!p) return blank;
+  var isOut = sel.court === court && sel.out.indexOf(pid) >= 0;
+  var badge = isOut
+    ? '<span class="long">เลือกออก ✕</span><span class="short">ออก ✕</span>'
+    : '<span class="long">เล่นติด '+p.consec+' นัด</span><span class="short">ติด '+p.consec+'</span>';
+  return '<div class="slot'+(isOut?" out-selected":"")+'" data-court="'+court+'" data-slot="'+i+'">'
+       + '<div class="nm">'+esc(p.name)+'</div><div class="badge">'+badge+'</div></div>';
+}
+function renderCourt(court){
+  var el = document.getElementById("court-"+court);
+  var active = sel.court === court, cap = capacity(court);
+  el.innerHTML =
+    '<div class="court-head"><div class="court-title">สนาม '+court+'</div>'
+  + '<button class="mini-btn" data-suggest="'+court+'">แนะนำอัตโนมัติ</button></div>'
+  + '<div class="court-body"><div class="net"></div>'
+  +   '<div class="team">'+slotHTML(court,0)+slotHTML(court,1)+'</div>'
+  +   '<div class="team">'+slotHTML(court,2)+slotHTML(court,3)+'</div></div>'
+  + '<div class="swapbar'+(active?" show":"")+'">'
+  +   '<div class="info">ออก '+(active?sel.out.length:0)+' · เข้า '+(active?sel.in.length:0)+'/'+(active?cap:0)+'</div>'
+  +   '<div class="btns"><button class="btn-cancel" data-cancel="1">ยกเลิก</button>'
+  +   '<button class="btn-confirm" data-confirm="1"'+((!active||cap===0||sel.in.length!==cap)?" disabled":"")+'>ยืนยันเปลี่ยนตัว</button></div></div>';
+}
+function renderWaiting(){
+  var wl = waitingList(), cont = document.getElementById("waitingChips");
+  var cap = sel.court !== null ? capacity(sel.court) : 0;
+  if(!wl.length){ cont.innerHTML = '<div class="empty-msg">ไม่มีคนรอคิว</div>'; return; }
+  cont.innerHTML = wl.map(function(p, idx){
+    var isIn = sel.in.indexOf(p.id) >= 0;
+    var disabled = sel.court === null || (!isIn && sel.in.length >= cap);
+    return '<div class="chip'+(isIn?" in-selected":"")+(disabled?" disabled":"")+(idx===0&&!isIn?" next":"")+'" data-wait="'+p.id+'">'
+         + esc(p.name)+' <span class="n">'+p.games+' เกม</span></div>';
+  }).join("");
+}
+function renderStats(){
+  document.getElementById("statPlaying").textContent = players.filter(function(p){ return p.status==="court1"||p.status==="court2"; }).length;
+  document.getElementById("statWaiting").textContent = players.filter(function(p){ return p.attending && p.status==="waiting"; }).length;
+  document.getElementById("statOut").textContent    = players.filter(function(p){ return !p.attending; }).length;
+}
+function renderManage(){
+  var cont = document.getElementById("plist");
+  var sorted = players.slice().sort(function(a,b){ return a.name.localeCompare(b.name,"th"); });
+  cont.innerHTML = sorted.map(function(p){
+    var where = !p.attending ? "ไม่มาวันนี้"
+              : (p.status === "waiting" ? "รอคิว" : "กำลังตี สนาม " + p.status.replace("court",""));
+    return '<div class="prow"><div><div class="pname">'+esc(p.name)+'</div>'
+         + '<div class="pmeta">'+where+' · เล่นแล้ว '+p.games+' เกม</div></div>'
+         + '<div style="display:flex;align-items:center;gap:10px;">'
+         + '<div class="toggle'+(p.attending?" on":"")+'" data-toggle="'+p.id+'"><div class="dot"></div></div>'
+         + '<button class="del-btn" data-del="'+p.id+'">✕</button></div></div>';
+  }).join("");
+}
+function render(){
+  renderCourt(1); renderCourt(2); renderWaiting(); renderStats(); save();
+}
+
+/* ================= events ================= */
+document.addEventListener("click", function(e){
+  var t = e.target.closest("[data-slot],[data-wait],[data-suggest],[data-cancel],[data-confirm],[data-toggle],[data-del]");
+  if(!t) return;
+  if(t.hasAttribute("data-slot"))         tapSlot(+t.getAttribute("data-court"), +t.getAttribute("data-slot"));
+  else if(t.hasAttribute("data-wait"))    tapWaiting(+t.getAttribute("data-wait"));
+  else if(t.hasAttribute("data-suggest")) suggest(+t.getAttribute("data-suggest"));
+  else if(t.hasAttribute("data-cancel"))  cancelSel();
+  else if(t.hasAttribute("data-confirm")) confirmSwap();
+  else if(t.hasAttribute("data-toggle"))  toggleAttend(+t.getAttribute("data-toggle"));
+  else if(t.hasAttribute("data-del"))     removePlayer(+t.getAttribute("data-del"));
+});
+
+document.getElementById("btnManage").addEventListener("click", openManage);
+document.getElementById("btnClose").addEventListener("click", closeManage);
+document.getElementById("btnReset").addEventListener("click", resetSession);
+document.getElementById("btnAdd").addEventListener("click", addPlayer);
+document.getElementById("newName").addEventListener("keydown", function(e){ if(e.key === "Enter") addPlayer(); });
+document.getElementById("overlay").addEventListener("click", function(e){ if(e.target === this) closeManage(); });
+
+document.getElementById("btnShare").addEventListener("click", openShare);
+document.getElementById("saveChip").addEventListener("click", openShare);
+document.getElementById("btnShareClose").addEventListener("click", closeShare);
+document.getElementById("shareOverlay").addEventListener("click", function(e){ if(e.target === this) closeShare(); });
+document.getElementById("btnCopyLink").addEventListener("click", function(){ copyText(shareURL(), "คัดลอกลิงก์แล้ว — วางในไลน์ได้เลย"); });
+document.getElementById("btnCopyCode").addEventListener("click", function(){ copyText(encodeState(), "คัดลอกโค้ดสำรองแล้ว"); });
+document.getElementById("btnRestore").addEventListener("click", function(){ doRestore(document.getElementById("restoreCode").value); });
+document.getElementById("btnDownload").addEventListener("click", downloadBackup);
+document.getElementById("btnUpload").addEventListener("click", function(){ document.getElementById("fileInput").click(); });
+document.getElementById("fileInput").addEventListener("change", function(e){
+  var f = e.target.files && e.target.files[0];
+  if(!f) return;
+  var r = new FileReader();
+  r.onload = function(){ doRestore(String(r.result)); };
+  r.onerror = function(){ toast("อ่านไฟล์ไม่สำเร็จ", true); };
+  r.readAsText(f);
+  e.target.value = "";
+});
+document.getElementById("btnShareNative").addEventListener("click", function(){
+  var url = shareURL();
+  if(navigator.share){
+    navigator.share({ title:"จัดคิวตีแบด", text:"สถานะคิวตอนนี้", url:url }).catch(function(){});
+  } else copyText(url, "เครื่องนี้ไม่มีเมนูแชร์ — คัดลอกลิงก์ให้แล้ว");
+});
+
+document.addEventListener("gesturestart", function(e){ e.preventDefault(); });
+// iOS can kill a backgrounded tab without a normal unload — save on the way out
+window.addEventListener("pagehide", save);
+document.addEventListener("visibilitychange", function(){ if(document.visibilityState === "hidden") save(); });
+
+window.__bq = {
+  tapSlot:tapSlot, tapWaiting:tapWaiting, suggest:suggest, confirmSwap:confirmSwap,
+  toggleAttend:toggleAttend, waitingList:waitingList, capacity:capacity, getP:getP,
+  encodeState:encodeState, decodeState:decodeState, shareURL:shareURL, doRestore:doRestore,
+  applySnapshot:applySnapshot, snapshot:snapshot,
+  state:function(){ return { players:players, court1:court1, court2:court2, sel:sel, turnCounter:turnCounter }; },
+  storageOK:function(){ return storageOK; }
+};
+
+/* ================= boot ================= */
+(function boot(){
+  var fromLink = null;
+  var m = location.hash.match(/[#&]s=([A-Za-z0-9_-]+)/);
+  if(m){
+    try { fromLink = decodeState(m[1]); } catch(e){ fromLink = null; }
+    // drop the hash so a later refresh doesn't re-apply this snapshot
+    try { history.replaceState(null, "", location.pathname + location.search); } catch(e){ location.hash = ""; }
+  }
+
+  var saved = loadSaved();
+
+  if(fromLink){
+    var clash = saved && JSON.stringify(saved.court1) + JSON.stringify(saved.court2)
+                       !== JSON.stringify(fromLink.court1) + JSON.stringify(fromLink.court2);
+    if(clash && !confirm("ลิงก์นี้มีสถานะคิวของก๊วน ต้องการโหลดทับข้อมูลในเครื่องนี้ไหม?\n\nกด ตกลง = ใช้ข้อมูลจากลิงก์\nกด ยกเลิก = ใช้ข้อมูลเดิมในเครื่อง")){
+      fromLink = null;
+    }
+  }
+
+  if(fromLink && applySnapshot(fromLink)){
+    render();
+    setTimeout(function(){ toast("โหลดสถานะจากลิงก์แล้ว"); }, 300);
+    return;
+  }
+  if(saved && applySnapshot(saved)){ render(); return; }
+  freshStart(); render();
+})();
+
+})();
+</script>
+</body>
+</html>
