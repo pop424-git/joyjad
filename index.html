@@ -429,9 +429,9 @@
   body.viewer #scSetup #btnToPick{ display:none; }
   body.viewer #scSetup .viewer-wait{ display:block; }
   .viewer-wait{
-    display:none; flex:1 1 auto; text-align:center; font-size:var(--fs-sm); color:var(--muted); line-height:1.6;
+    display:none; flex:1 1 auto; text-align:center; font-size:var(--fs-xs); color:var(--muted); line-height:1.5;
   }
-  .wait-count{ margin-top:9px; font-size:var(--fs-xs); color:var(--accent); font-weight:800; }
+  .wait-count{ display:block; font-size:var(--fs-xs); color:var(--accent); font-weight:800; }
   .savechip.online{ border-color:var(--border); color:var(--accent); font-weight:800; }
   .savechip.online .eye{ font-size:1em; line-height:1; }
   body.viewer #onlineChip{ display:flex; }
@@ -804,9 +804,7 @@
     </div>
     <div class="wiz-foot">
       <button class="btn btn-main grow" id="btnToPick">ถัดไป · เลือกผู้เล่น</button>
-      <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน — พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง
-        <div class="wait-count" id="viewerWaitCount"></div>
-      </div>
+      <div class="viewer-wait">ยังไม่เริ่มจัดก๊วน <span class="wait-count" id="viewerWaitCount"></span></div>
     </div>
   </section>
 
