@@ -423,15 +423,18 @@
   body.viewer .q-hint{ display:none; }
   body.viewer .pslot{ cursor:default; }
   body.viewer .pslot:active .card{ transform:none; }
-  /* viewer เห็นจำนวน/เลขสนามที่แอดมินตั้งไว้เหมือนกัน แค่กดไม่ได้ — สัดส่วนหน้าเท่ากับแอดมิน */
-  body.viewer #scSetup .pick-courts{ pointer-events:none; }
-  body.viewer #scSetup #courtNote{ visibility:hidden; }
-  body.viewer #scSetup #btnToPick{ display:none; }
+  /* viewer ไม่ได้ตั้งสนามเอง — ซ่อนตัวเลือกสนามกับปุ่มไปต่อ แล้วขึ้นข้อความรอแทนที่ตรงนั้น */
+  body.viewer #scSetup .pick-courts,
+  body.viewer #scSetup .wiz-foot{ display:none; }
   body.viewer #scSetup .viewer-wait{ display:block; }
   .viewer-wait{
-    display:none; flex:1 1 auto; text-align:center; font-size:var(--fs-xs); color:var(--muted); line-height:1.5;
+    display:none; flex:0 0 auto; text-align:center;
+    background:var(--panel); border:1px dashed var(--border); border-radius:var(--radius);
+    padding:clamp(14px,2.5vh,26px) var(--pad);
   }
-  .wait-count{ color:var(--accent); font-weight:800; }
+  .vw-title{ font-size:var(--fs-md); font-weight:800; color:var(--accent); }
+  .vw-sub{ margin-top:5px; font-size:var(--fs-xs); color:var(--muted); line-height:1.5; }
+  .wait-count{ margin-top:9px; font-size:var(--fs-sm); color:var(--text); font-weight:800; }
   .savechip.online{ border-color:var(--border); color:var(--accent); font-weight:800; }
   .savechip.online .eye{ font-size:1em; line-height:1; }
   body.viewer #onlineChip{ display:flex; }
@@ -797,10 +800,14 @@
         <div class="court-slots" id="courtSlots"></div>
         <div class="note-line" id="courtNote"></div>
       </div>
+      <div class="viewer-wait">
+        <div class="vw-title">รอเริ่มจัดก๊วน</div>
+        <div class="vw-sub">พอเริ่มแล้ว สนามกับคิวจะขึ้นหน้านี้เอง</div>
+        <div class="wait-count" id="viewerWaitCount"></div>
+      </div>
     </div>
     <div class="wiz-foot">
       <button class="btn btn-main grow" id="btnToPick">ถัดไป · เลือกผู้เล่น</button>
-      <div class="viewer-wait">รอเริ่มจัดก๊วน<span class="wait-count" id="viewerWaitCount"></span></div>
     </div>
   </section>
 
@@ -2157,7 +2164,7 @@ function adoptRemote(remote, msg){
 function paintOnline(){
   var n = onlineCount, others = Math.max(0, n - 1);
   var wait = document.getElementById("viewerWaitCount");
-  if(wait) wait.textContent = n > 1 ? (" · มี " + n + " คนรออยู่") : " · มีคุณคนเดียวรออยู่";
+  if(wait) wait.textContent = n > 1 ? ("ตอนนี้มี " + n + " คนรออยู่") : "ตอนนี้มีคุณคนเดียวรออยู่";
   var chip = document.getElementById("onlineChip"), txt = document.getElementById("onlineText");
   if(chip && txt){
     chip.style.display = n > 0 ? "flex" : "none";
