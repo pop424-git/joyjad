@@ -678,7 +678,8 @@
   .co-names{
     flex:1 1 auto; min-height:0; width:100%; overflow:hidden;
     display:flex; flex-wrap:nowrap; align-items:center; justify-content:center;
-    gap:0 clamp(12px,2.6vw,40px); line-height:1; font-size:40px;
+    /* ระยะห่างคิดเป็น em — ชื่อยิ่งตัวใหญ่ ช่องไฟยิ่งกว้างตาม ไม่ติดกันจนอ่านเป็นคำเดียว */
+    gap:0 max(26px,.55em); line-height:1; font-size:40px;
   }
   .co-names span{ font-size:1em; font-weight:900; color:#fff; white-space:nowrap; }
   /* มือถือ (จอตั้ง): ชื่อละบรรทัด ตัวจะได้ใหญ่กว่าเรียงข้างกัน */
