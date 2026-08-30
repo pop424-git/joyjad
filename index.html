@@ -149,7 +149,8 @@
   body.viewer .plan-edit{ display:none; }
   /* มีนัด = การ์ดคือพระเอก ย่อโลโก้กับระยะห่างลง ให้เลือกสนามยังพอเห็นในจอเดียว */
   .hero:has(.plan-card){ gap:clamp(6px,1vh,12px); padding:clamp(12px,2vh,26px) var(--pad); }
-  .hero:has(.plan-card) .logo{ font-size:clamp(32px,8.5vw,64px); }
+  /* ค่าตั้งต้น — ขนาดจริงคำนวณตอนวาด (fitLogo) ให้ใหญ่สุดเท่าที่ยังอยู่บรรทัดเดียว */
+  .hero:has(.plan-card) .logo{ font-size:clamp(48px,14vw,110px); white-space:nowrap; }
   .hero:has(.plan-card) .rule-line{ display:none; }
   .hero:has(.plan-card) .tagline{ display:none; }
 
@@ -849,7 +850,7 @@
     .hm b{ font-size:var(--fs-md); }
     /* ช่อง hero ล็อกความสูงไว้ — มีนัดคนเยอะก็ยังพอดีช่อง ไม่ต้องเลื่อนในการ์ด */
     .hero:has(.plan-card){ gap:clamp(5px,.8vh,10px); padding:clamp(10px,1.6vh,18px) var(--pad); }
-    .hero:has(.plan-card) .logo{ font-size:clamp(30px,3.6vw,52px); }
+    .hero:has(.plan-card) .logo{ font-size:clamp(44px,7vw,110px); }
     .hero:has(.plan-card) .plan-card{ gap:6px; }
     .hero:has(.plan-card) .plan-names{ max-height:min(17vh,130px); }
     .hero:has(.plan-card) .plan-names span{ padding:2px 9px; }
@@ -1262,6 +1263,7 @@ function fitCalloutNames(){
 window.addEventListener("resize", function(){
   var box = document.getElementById("callout");
   if(box && box.classList.contains("show")) fitCalloutNames();
+  if(phase === "setup") fitLogo();
 });
 function hideCallout(){
   if(calloutTimer){ clearTimeout(calloutTimer); calloutTimer = null; }
@@ -1536,7 +1538,7 @@ function renderPlan(){
   if(!box) return;
   var p = activePlan(), btn = document.getElementById("btnEditPlan");
   if(btn) btn.textContent = p ? "แก้ไขนัด" : "ตั้งนัดวันนี้";
-  if(!p){ box.innerHTML = defaultHeroHTML(); return; }
+  if(!p){ box.innerHTML = defaultHeroHTML(); fitLogo(); return; }
 
   var names = p.players || [];
   var html = '<div class="plan-card">'
@@ -1551,6 +1553,29 @@ function renderPlan(){
         + (names.length ? '<div class="plan-names">' + names.map(function(n){ return '<span>' + dispName(n) + '</span>'; }).join("") + '</div>' : "")
         + '</div></div>';
   box.innerHTML = html;
+  fitLogo();
+}
+/* ชื่อก๊วนบนหน้าแรก: ใหญ่ที่สุดเท่าที่ยังอยู่บรรทัดเดียว (มีนัดแล้วโลโก้เป็นตัวชูโรงคู่การ์ด)
+   ไม่มีนัด = ปล่อยตามขนาดใน CSS เหมือนเดิม */
+function fitLogo(){
+  var hero = document.querySelector(".hero"), logo = hero && hero.querySelector(".logo");
+  if(!logo) return;
+  if(!activePlan()){ logo.style.fontSize = ""; return; }
+  var cs = getComputedStyle(hero);
+  var avail = hero.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+  if(avail <= 0) return;                       // หน้าแรกถูกซ่อนอยู่ วัดไม่ได้ ไว้ค่อยคิดตอนโชว์
+  logo.style.fontSize = "100px";
+  var w = logo.scrollWidth;
+  if(!w){ logo.style.fontSize = ""; return; }
+  var px = Math.floor(100 * avail / w);
+  // เพดานตามความสูงจอด้วย — จอเตี้ย (มือถือแนวนอน) ความกว้างเหลือเฟือ โลโก้จะกินทั้งจอถ้าไม่กัน
+  px = Math.max(28, Math.min(px, Math.round(window.innerHeight * .22), 190));
+  logo.style.fontSize = px + "px";
+  // จอที่ล็อกความสูง hero ไว้ (iPad แนวนอน) ถ้าการ์ดยังล้น ถอยขนาดโลโก้ลงจนพอดี
+  for(var i=0;i<12 && px > 28 && hero.scrollHeight > hero.clientHeight + 1;i++){
+    px = Math.floor(px * .9);
+    logo.style.fontSize = px + "px";
+  }
 }
 /* นัดใหม่ (หรือเพิ่งเปิดแอปแล้วเจอนัดที่ตั้งไว้) = เติมสนาม + รายชื่อให้หน้าตั้งค่า ครั้งเดียวต่อนัด */
 function applyPlanToSetup(p){
