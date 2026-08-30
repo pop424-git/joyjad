@@ -646,6 +646,37 @@
   .note{ font-size:var(--fs-xs); color:var(--muted); margin-top:10px; line-height:1.6; }
   .close-drawer{ margin-top:14px; width:100%; padding:11px; background:var(--panel2); border:1px solid var(--border); color:var(--text); border-radius:10px; font-size:var(--fs-sm); cursor:pointer; }
 
+  /* ---------- ป้ายเรียกลงสนาม (ขึ้นพร้อมเสียงตอนกดยืนยันจบเกม) ----------
+     เต็มจอเกือบหมด อ่านจากอีกฝั่งคอร์ทได้ — จอ iPad ที่วางไว้ข้างสนามคือเป้าหมายหลัก */
+  #callout{
+    position:fixed; inset:0; z-index:100; display:none;
+    align-items:center; justify-content:center; padding:clamp(14px,4vw,40px);
+    background:rgba(90,15,48,.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    cursor:pointer;
+  }
+  #callout.show{ display:flex; animation:co-in .18s ease-out; }
+  @keyframes co-in{ from{ opacity:0; transform:scale(.97); } to{ opacity:1; transform:none; } }
+  .co-card{
+    width:100%; height:100%; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:clamp(10px,2.4vh,28px); text-align:center;
+    background:linear-gradient(165deg,#fff 0%,var(--court-pink) 62%,var(--court-pink-dark) 100%);
+    border:3px solid var(--accent); border-radius:clamp(16px,2.4vw,28px);
+    padding:clamp(18px,4.5vh,54px) clamp(14px,3vw,44px); box-shadow:0 18px 50px rgba(90,15,48,.35);
+  }
+  .co-court{
+    background:var(--accent); color:var(--accent-ink); border-radius:999px;
+    padding:clamp(6px,1.4vh,16px) clamp(20px,3.4vw,48px); line-height:1.1;
+    font-size:clamp(28px,5vw + 2vh,76px); font-weight:900; letter-spacing:.5px;
+  }
+  .co-lbl{ font-size:clamp(16px,1.8vw + .8vh,30px); font-weight:800; color:var(--muted); letter-spacing:2px; }
+  .co-names{ display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(10px,2.4vw,34px); min-width:0; }
+  .co-names span{
+    font-size:clamp(38px,7.5vw + 2.5vh,150px); font-weight:900; line-height:1.05;
+    color:var(--accent); overflow-wrap:anywhere;
+  }
+  .co-hint{ font-size:clamp(13px,1.2vw + .5vh,20px); color:var(--muted); font-weight:700; }
+
   #toast{
     position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
     background:#7a1440; border:1px solid #7a1440; color:#fff;
@@ -1084,6 +1115,13 @@
   </div>
 </div>
 
+<div id="callout"><div class="co-card">
+  <div class="co-court" id="coCourt"></div>
+  <div class="co-lbl">ลงสนามได้เลย</div>
+  <div class="co-names" id="coNames"></div>
+  <div class="co-hint">แตะเพื่อปิด</div>
+</div></div>
+
 <div id="toast"></div>
 
 <script>
@@ -1172,6 +1210,39 @@ function speakSub(courtId, names){
     window.speechSynthesis.speak(u);
   }
 }
+/* ---- ป้ายเรียกลงสนาม ----
+   ขึ้นพร้อมเสียงบนเครื่องที่กด แล้วเดินทางไปเครื่องอื่นผ่าน snapshot (ช้าได้ถึงรอบ poll)
+   ป้ายที่เก่ากว่า CALLOUT_STALE_MS ไม่ต้องขึ้น — เครื่องที่เพิ่งเปิดจะได้ไม่เจอของค้าง */
+var CALLOUT_MS = 4000, CALLOUT_STALE_MS = 20000;
+var callout = null;          // {at, no, names} ตัวล่าสุดที่ประกาศไป (ติดไปกับ snapshot)
+var calloutSeen = 0;         // at ของป้ายที่เครื่องนี้ขึ้นไปแล้ว กันขึ้นซ้ำตอน state เด้งกลับมา
+var calloutTimer = null;
+function showCallout(c){
+  if(!c || !c.names || !c.names.length) return;
+  calloutSeen = c.at || Date.now();
+  var box = document.getElementById("callout");
+  if(!box) return;
+  document.getElementById("coCourt").textContent = "สนาม " + c.no;
+  document.getElementById("coNames").innerHTML = c.names.map(function(n){
+    return "<span>" + dispName(n) + "</span>";
+  }).join("");
+  box.classList.add("show");
+  if(calloutTimer) clearTimeout(calloutTimer);
+  calloutTimer = setTimeout(hideCallout, CALLOUT_MS);
+}
+function hideCallout(){
+  if(calloutTimer){ clearTimeout(calloutTimer); calloutTimer = null; }
+  var box = document.getElementById("callout");
+  if(box) box.classList.remove("show");
+}
+/* เครื่องอื่น: เจอป้ายใหม่ใน state ที่ดึงมา ก็ขึ้นตาม */
+function checkCallout(remote){
+  var c = remote && remote.callout;
+  if(!c || !c.at || c.at <= calloutSeen) return;
+  if(Date.now() - c.at > CALLOUT_STALE_MS){ calloutSeen = c.at; return; }
+  showCallout(c);
+}
+
 function money(n){
   var r = Math.round(n*100)/100;
   return (r % 1 === 0 ? r.toFixed(0) : r.toFixed(2)) + " บาท";
@@ -1233,7 +1304,7 @@ function clearRemoteState(){
 
 function snapshot(){
   return { v:3, savedAt:Date.now(), sessionStartedAt:sessionStartedAt, phase:phase, courtCount:courtCount,
-           players:players, courts:courts, turnCounter:turnCounter, cost:cost };
+           players:players, courts:courts, turnCounter:turnCounter, cost:cost, callout:callout };
 }
 function save(){
   if(isAdmin) pushState();
@@ -1623,6 +1694,7 @@ function applySnapshot(d){
   cost = d.cost ? { court:+d.cost.court||0, shuttles:+d.cost.shuttles||0, tube:+d.cost.tube||0 } : { court:0, shuttles:0, tube:0 };
   sessionStartedAt = d.sessionStartedAt || d.savedAt || Date.now();
   pending = null;
+  callout = d.callout || null;     // ป้ายล่าสุดติดไปกับ state ต่อ — จะขึ้นจอไหม checkCallout เป็นคนตัดสิน
   return true;
 }
 
@@ -2043,7 +2115,10 @@ function confirmEnd(){
   }
   c.gameNo += 1;
   c.startedAt = Date.now();
-  speakSub(c.no, pending.in.map(function(pid){ var p = getP(pid); return p ? p.name : ""; }).filter(Boolean));
+  var called = pending.in.map(function(pid){ var p = getP(pid); return p ? p.name : ""; }).filter(Boolean);
+  speakSub(c.no, called);
+  callout = { at:Date.now(), no:c.no, names:called };
+  showCallout(callout);
   closeSheet(); render();
 }
 
@@ -2362,6 +2437,7 @@ function newSession(skipConfirm){
   }
   clearSaved(); clearRemoteState();
   players = []; courts = []; picked = []; turnCounter = 0; pending = null; sessionStartedAt = null;
+  callout = null; hideCallout();
   cost = { court:prices.court, shuttles:0, tube:prices.tube };
   closeSheet();
   showScreen("setup"); render();
@@ -2418,6 +2494,7 @@ function pollState(){
       if(!d || !d.ok) throw new Error("bad");
       lastLiveAt = new Date();
       onlineCount = d.online || 0;
+      checkCallout(d.state);
       setPlanFromServer(d.plan);
       if(d.state && applySnapshot(d.state)){ showScreen("play"); renderPlay(); }
       else showViewerEmpty();
@@ -2433,6 +2510,7 @@ function heartbeat(){
     .then(function(d){
       if(!d || !d.ok) return;
       onlineCount = d.online || 0; paintOnline();
+      checkCallout(d.state);
       if(!planDraft) setPlanFromServer(d.plan);   // กำลังกรอกฟอร์มอยู่ อย่าเพิ่งวาดทับ
       syncAdminState(d.state);
     })
@@ -2597,6 +2675,9 @@ document.getElementById("newRosterName").addEventListener("keydown", function(e)
 document.getElementById("btnSyncRefresh").addEventListener("click", fetchRoster);
 document.getElementById("btnRosterReset").addEventListener("click", resetRosterAll);
 
+/* ป้ายเรียกลงสนาม — แตะที่ไหนก็ปิด (ทุกเครื่อง ไม่ใช่แค่แอดมิน) */
+document.getElementById("callout").addEventListener("click", hideCallout);
+
 /* ตั้งนัด (แอดมินเท่านั้น — ปุ่มถูกซ่อนในโหมดดูสด) */
 document.getElementById("btnEditPlan").addEventListener("click", openPlanForm);
 document.getElementById("btnClosePlan").addEventListener("click", closePlanForm);
@@ -2676,6 +2757,8 @@ window.__bq = {
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
   endedSession:function(){ return endedSession; },
+  showCallout:showCallout, hideCallout:hideCallout, checkCallout:checkCallout,
+  callout:function(){ return callout; },
   plan:function(){ return plan; }, activePlan:activePlan, renderPlan:renderPlan,
   openPlanForm:openPlanForm, closePlanForm:closePlanForm, savePlanForm:savePlanForm,
   togglePlanCourt:togglePlanCourt, togglePlanName:togglePlanName, planEndsAt:planEndsAt,
