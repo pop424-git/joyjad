@@ -80,13 +80,19 @@
     flex:1 1 auto; min-height:0; overflow-y:auto; -webkit-overflow-scrolling:touch;
     display:flex; flex-direction:column; gap:var(--gap); padding-bottom:4px;
   }
+  /* การ์ดนัดยาวได้ตามจำนวนคน — hero ต้องโตตามเนื้อหา (ไม่หด) แล้วให้หน้าเลื่อนแทน
+     ส่วนจอ iPad แนวนอนที่ล็อกความสูงไว้ ก็เลื่อนในกล่องเองได้
+     safe center = จัดกลางเมื่อเนื้อหาสั้น แต่ไม่ตัดหัวเมื่อเนื้อหายาวเกินกล่อง */
   .hero{
-    flex:1 1 auto; min-height:0; display:flex; flex-direction:column; justify-content:center;
-    align-items:center; gap:clamp(8px,1.5vh,18px); text-align:center;
+    flex:1 0 auto; min-height:0; display:flex; flex-direction:column;
+    justify-content:center; justify-content:safe center;
+    align-items:center; gap:clamp(8px,1.5vh,18px); text-align:center; overflow-y:auto; position:relative;
     background:linear-gradient(165deg,#fff 0%,var(--court-pink) 58%,var(--court-pink-dark) 100%);
     border:1px solid var(--border); border-radius:calc(var(--radius) + 6px);
     box-shadow:var(--shadow); padding:clamp(16px,3.2vh,38px) var(--pad);
   }
+  /* มีนัด = การ์ดสูงพอตัวอยู่แล้ว ไม่ต้องยืด hero ให้เหลือช่องโหว่ใต้การ์ด */
+  .hero:has(.plan-card){ flex:0 0 auto; }
   .hero .logo{
     margin:0; font-size:clamp(44px,12vw,92px); font-weight:800; line-height:1;
     color:var(--accent); letter-spacing:-1.5px;
@@ -128,13 +134,24 @@
   .pl-row .cap{ font-size:var(--fs-sm); color:var(--muted); font-weight:700; }
   .plan-people{ border-top:1px dashed #eab8cd; padding-top:8px; }
   .pp-head{ font-size:var(--fs-xs); font-weight:800; color:var(--accent); letter-spacing:.4px; margin-bottom:6px; }
-  .plan-names{ display:flex; flex-wrap:wrap; gap:5px; }
+  /* คนเยอะแค่ไหนก็ให้เลื่อนอยู่ในกรอบรายชื่อ — หัวการ์ดกับปุ่มแก้ไขต้องไม่โดนดันหาย */
+  .plan-names{ display:flex; flex-wrap:wrap; gap:5px; max-height:min(30vh,210px); overflow-y:auto; }
   .plan-names span{
     background:var(--accent-soft); border-radius:999px; padding:3px 10px;
     font-size:var(--fs-xs); font-weight:700;
   }
+  /* มีนัดแล้ว ปุ่มแก้ย้ายไปมุมขวาบน — ไม่กินความสูงของการ์ด */
   .plan-edit{ margin-top:clamp(2px,1vh,8px); }
+  .hero:has(.plan-card) .plan-edit{
+    position:absolute; top:clamp(8px,1.4vh,16px); right:clamp(8px,1.4vw,16px);
+    margin:0; padding:6px 11px; font-size:var(--fs-xs); background:rgba(255,255,255,.92);
+  }
   body.viewer .plan-edit{ display:none; }
+  /* มีนัด = การ์ดคือพระเอก ย่อโลโก้กับระยะห่างลง ให้เลือกสนามยังพอเห็นในจอเดียว */
+  .hero:has(.plan-card){ gap:clamp(6px,1vh,12px); padding:clamp(12px,2vh,26px) var(--pad); }
+  .hero:has(.plan-card) .logo{ font-size:clamp(32px,8.5vw,64px); }
+  .hero:has(.plan-card) .rule-line{ display:none; }
+  .hero:has(.plan-card) .tagline{ display:none; }
 
   /* ฟอร์มตั้งนัด (ใน .drawer) */
   .pf-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
@@ -719,6 +736,11 @@
     .hm .ic{ font-size:var(--fs-lg); }
     .hm b{ font-size:var(--fs-md); }
     .hm .cap{ font-size:var(--fs-sm); }
+    /* การ์ดนัดบนมือถือ: บีบระยะห่างของชิปชื่อ คนเยอะๆ จะได้ไม่กินทั้งจอ */
+    .plan-card{ gap:6px; }
+    .plan-names{ gap:4px; }
+    .plan-names span{ padding:2px 9px; }
+    .plan-people{ padding-top:6px; }
   }
 
   /* ==========================================================
@@ -787,6 +809,12 @@
     .hero .logo{ font-size:clamp(50px,6.2vw,98px); }
     .hero .tagline{ font-size:var(--fs-md); }
     .hm b{ font-size:var(--fs-md); }
+    /* ช่อง hero ล็อกความสูงไว้ — มีนัดคนเยอะก็ยังพอดีช่อง ไม่ต้องเลื่อนในการ์ด */
+    .hero:has(.plan-card){ gap:clamp(5px,.8vh,10px); padding:clamp(10px,1.6vh,18px) var(--pad); }
+    .hero:has(.plan-card) .logo{ font-size:clamp(30px,3.6vw,52px); }
+    .hero:has(.plan-card) .plan-card{ gap:6px; }
+    .hero:has(.plan-card) .plan-names{ max-height:min(17vh,130px); }
+    .hero:has(.plan-card) .plan-names span{ padding:2px 9px; }
 
     /* --- หน้าเลือกคน: ชิปใหญ่ขึ้น นิ้วแตะง่ายบน iPad --- */
     #rosterGrid{ grid-template-columns:repeat(auto-fill,minmax(clamp(150px,17vw,230px),1fr)); gap:9px; }
@@ -804,6 +832,18 @@
     #scCost .perhead{ grid-area:per; display:flex; flex-direction:column; justify-content:center; align-self:stretch; }
     #scCost .scroll-area{ grid-area:fields; }
     #scCost .wiz-foot{ grid-area:foot; }
+  }
+
+  /* ==========================================================
+     C. มือถือแนวนอน — กว้างพอเข้าเงื่อนไข iPad ด้านบน แต่เตี้ยเกินจะแบ่งหน้าแรกเป็นตาราง
+        (ช่อง hero เหลือไม่กี่สิบ px จนโลโก้กับการ์ดโดนตัด) เลยพับกลับเป็นแถวเดียวแล้วเลื่อนเอา
+     ========================================================== */
+  @media (orientation:landscape) and (min-width:760px) and (max-height:600px){
+    .setup-scroll{ display:flex; overflow-y:auto; }
+    .setup-scroll .hero{ height:auto; }
+    .cchoice{ padding:clamp(8px,2vh,16px) 4px; }
+    .cchoice .num{ font-size:clamp(22px,2.6vw,34px); }
+    .cchoice .cap{ font-size:var(--fs-xs); margin-top:2px; }
   }
 </style>
 </head>
