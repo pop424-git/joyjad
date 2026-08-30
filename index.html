@@ -651,7 +651,7 @@
   #callout{
     position:fixed; inset:0; z-index:100; display:none;
     align-items:center; justify-content:center; padding:clamp(14px,4vw,40px);
-    background:rgba(90,15,48,.5); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+    background:rgba(60,8,32,.6); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
     cursor:pointer;
   }
   #callout.show{ display:flex; animation:co-in .18s ease-out; }
@@ -659,23 +659,30 @@
   .co-card{
     width:100%; height:100%; overflow:hidden;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    gap:clamp(10px,2.4vh,28px); text-align:center;
-    background:linear-gradient(165deg,#fff 0%,var(--court-pink) 62%,var(--court-pink-dark) 100%);
-    border:3px solid var(--accent); border-radius:clamp(16px,2.4vw,28px);
-    padding:clamp(18px,4.5vh,54px) clamp(14px,3vw,44px); box-shadow:0 18px 50px rgba(90,15,48,.35);
+    gap:clamp(8px,1.8vh,22px); text-align:center;
+    background:linear-gradient(165deg,#d81b60 0%,#b4104f 58%,#8c0d3f 100%);
+    border:3px solid rgba(255,255,255,.35); border-radius:clamp(16px,2.4vw,28px);
+    padding:clamp(14px,3vh,40px) clamp(12px,2.4vw,36px); box-shadow:0 18px 50px rgba(60,8,32,.45);
   }
   .co-court{
-    background:var(--accent); color:var(--accent-ink); border-radius:999px;
-    padding:clamp(6px,1.4vh,16px) clamp(20px,3.4vw,48px); line-height:1.1;
-    font-size:clamp(28px,5vw + 2vh,76px); font-weight:900; letter-spacing:.5px;
+    flex:0 0 auto; background:#fff; color:var(--accent); border-radius:999px;
+    padding:clamp(5px,1.1vh,14px) clamp(18px,3.2vw,44px); line-height:1.1;
+    font-size:clamp(24px,4vw + 1.6vh,64px); font-weight:900; letter-spacing:.5px;
   }
-  .co-lbl{ font-size:clamp(16px,1.8vw + .8vh,30px); font-weight:800; color:var(--muted); letter-spacing:2px; }
-  .co-names{ display:flex; flex-wrap:wrap; justify-content:center; gap:clamp(10px,2.4vw,34px); min-width:0; }
-  .co-names span{
-    font-size:clamp(38px,7.5vw + 2.5vh,150px); font-weight:900; line-height:1.05;
-    color:var(--accent); overflow-wrap:anywhere;
+  .co-lbl{
+    flex:0 0 auto; font-size:clamp(14px,1.5vw + .7vh,26px); font-weight:800;
+    color:rgba(255,255,255,.75); letter-spacing:2px;
   }
-  .co-hint{ font-size:clamp(13px,1.2vw + .5vh,20px); color:var(--muted); font-weight:700; }
+  /* ชื่อกินพื้นที่ที่เหลือทั้งหมด — ขนาดตัวอักษรคำนวณตอนแสดง (fitCalloutNames) ให้ใหญ่ที่สุดที่ยังพอดี */
+  .co-names{
+    flex:1 1 auto; min-height:0; width:100%; overflow:hidden;
+    display:flex; flex-wrap:nowrap; align-items:center; justify-content:center;
+    gap:0 clamp(12px,2.6vw,40px); line-height:1; font-size:40px;
+  }
+  .co-names span{ font-size:1em; font-weight:900; color:#fff; white-space:nowrap; }
+  /* มือถือ (จอตั้ง): ชื่อละบรรทัด ตัวจะได้ใหญ่กว่าเรียงข้างกัน */
+  @media (orientation:portrait){ .co-names{ flex-direction:column; gap:clamp(4px,1vh,14px) 0; } }
+  .co-hint{ flex:0 0 auto; font-size:clamp(12px,1.1vw + .5vh,19px); color:rgba(255,255,255,.6); font-weight:700; }
 
   #toast{
     position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
@@ -1213,7 +1220,9 @@ function speakSub(courtId, names){
 /* ---- ป้ายเรียกลงสนาม ----
    ขึ้นพร้อมเสียงบนเครื่องที่กด แล้วเดินทางไปเครื่องอื่นผ่าน snapshot (ช้าได้ถึงรอบ poll)
    ป้ายที่เก่ากว่า CALLOUT_STALE_MS ไม่ต้องขึ้น — เครื่องที่เพิ่งเปิดจะได้ไม่เจอของค้าง */
-var CALLOUT_MS = 4000, CALLOUT_STALE_MS = 20000;
+/* เครื่องที่กด (แอดมิน) ค้างนานกว่า — คนกดต้องมองจอแล้วหันไปบอกคนในสนามต่อ
+   เครื่องคนดูได้ป้ายช้ากว่าอยู่แล้วตามรอบ poll เลยตั้งสั้นกว่า */
+var CALLOUT_ADMIN_MS = 7000, CALLOUT_VIEW_MS = 5000, CALLOUT_STALE_MS = 20000;
 var callout = null;          // {at, no, names} ตัวล่าสุดที่ประกาศไป (ติดไปกับ snapshot)
 var calloutSeen = 0;         // at ของป้ายที่เครื่องนี้ขึ้นไปแล้ว กันขึ้นซ้ำตอน state เด้งกลับมา
 var calloutTimer = null;
@@ -1227,9 +1236,33 @@ function showCallout(c){
     return "<span>" + dispName(n) + "</span>";
   }).join("");
   box.classList.add("show");
+  fitCalloutNames();
   if(calloutTimer) clearTimeout(calloutTimer);
-  calloutTimer = setTimeout(hideCallout, CALLOUT_MS);
+  calloutTimer = setTimeout(hideCallout, isAdmin ? CALLOUT_ADMIN_MS : CALLOUT_VIEW_MS);
 }
+/* หาขนาดตัวอักษรที่ใหญ่ที่สุดที่ชื่อยังอยู่ครบในกรอบ (binary search)
+   ชื่อสั้นบนจอ iPad จะได้ตัวเบิ้มเต็มพื้นที่ ส่วนชื่อยาวบนมือถือก็ย่อลงมาเองพอดี */
+function fitCalloutNames(){
+  var wrap = document.getElementById("coNames");
+  if(!wrap || !wrap.firstChild) return;
+  var lo = 18, hi = Math.max(40, Math.round(Math.max(window.innerWidth, window.innerHeight) * .9));
+  var fits = function(px){
+    wrap.style.fontSize = px + "px";
+    return wrap.scrollWidth <= wrap.clientWidth + 1 && wrap.scrollHeight <= wrap.clientHeight + 1;
+  };
+  if(!fits(hi)){
+    for(var i=0;i<16 && hi - lo > 1;i++){
+      var mid = (lo + hi) / 2;
+      if(fits(mid)) lo = mid; else hi = mid;
+    }
+  } else lo = hi;
+  // หย่อนลงนิดเพื่อกันหางอักษรไทย (สระบน/ล่าง) เฉี่ยวขอบการ์ด
+  wrap.style.fontSize = Math.max(18, Math.floor(lo * .93)) + "px";
+}
+window.addEventListener("resize", function(){
+  var box = document.getElementById("callout");
+  if(box && box.classList.contains("show")) fitCalloutNames();
+});
 function hideCallout(){
   if(calloutTimer){ clearTimeout(calloutTimer); calloutTimer = null; }
   var box = document.getElementById("callout");
