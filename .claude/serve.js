@@ -10,6 +10,7 @@ const types = { ".html": "text/html; charset=utf-8", ".json": "application/json"
 
 let mockRoster = new Set();
 let mockState = null;
+let mockPlan = null;
 const mockOnline = new Map();
 let mockDown = false; // toggle via /api/_mock?down=1 to test offline fallback
 
@@ -28,7 +29,8 @@ http.createServer((req, res) => {
   if (rel === "/api/_mock") {
     const params = new URLSearchParams(query || "");
     if (params.has("down")) mockDown = params.get("down") === "1";
-    if (params.has("clear")) { mockRoster = new Set(); mockState = null; mockOnline.clear(); }
+    if (params.has("clear")) { mockRoster = new Set(); mockState = null; mockPlan = null; mockOnline.clear(); }
+    if (params.has("expireplan") && mockPlan) mockPlan.expiresAt = Date.now() - 1000;
     if (params.has("stale")) { for (const k of mockOnline.keys()) mockOnline.set(k, Date.now() - 60000); }
     if (params.has("seed")) params.get("seed").split(",").filter(Boolean).forEach((n) => mockRoster.add(n));
     sendJSON(res, 200, { ok: true, down: mockDown, names: sorted() });
@@ -44,7 +46,8 @@ http.createServer((req, res) => {
       if (id) mockOnline.set(id, now);
       const startedAt = mockState && (mockState.sessionStartedAt || mockState.savedAt);
       if (startedAt && now - startedAt > 300 * 60 * 1000) mockState = null;
-      sendJSON(res, 200, { ok: true, state: mockState, online: mockOnline.size });
+      if (mockPlan && (!mockPlan.expiresAt || now > mockPlan.expiresAt)) mockPlan = null;
+      sendJSON(res, 200, { ok: true, state: mockState, online: mockOnline.size, plan: mockPlan });
       return;
     }
     if (req.method === "POST") {
@@ -55,6 +58,12 @@ http.createServer((req, res) => {
         try { body = JSON.parse(raw || "{}"); } catch (e) { /* ignore */ }
         if (body.action === "clear") { mockState = null; sendJSON(res, 200, { ok: true }); return; }
         if (body.action === "set" && body.state) { mockState = body.state; sendJSON(res, 200, { ok: true }); return; }
+        if (body.action === "clearPlan") { mockPlan = null; sendJSON(res, 200, { ok: true, plan: null }); return; }
+        if (body.action === "setPlan" && body.plan) {
+          mockPlan = Object.assign({}, body.plan, { v: 1, updatedAt: Date.now() });
+          sendJSON(res, 200, { ok: true, plan: mockPlan });
+          return;
+        }
         sendJSON(res, 400, { ok: false, reason: "bad-action" });
       });
       return;

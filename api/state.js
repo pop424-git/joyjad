@@ -1,13 +1,21 @@
 // Live game-state snapshot backed by Vercel KV / Upstash Redis.
 // The admin device pushes the whole snapshot; viewer devices poll it read-only.
 // Stored with a 24h TTL so a finished/abandoned session disappears on its own.
+//
+// The same endpoint also carries the session plan ("นัดวันนี้") under a separate
+// Redis key, so ending a session clears the game state without wiping the plan.
 
 const KEY = "badminton:state";
+const PLAN_KEY = "badminton:plan";
 const ONLINE_KEY = "badminton:online";
 const MAX_BYTES = 40000;
 const SESSION_MAX_MS = 300 * 60 * 1000;   // ก๊วนเกิน 5 ชม. = ลืมปิด ทิ้งเอง
 const TTL_SECONDS = Math.ceil(SESSION_MAX_MS / 1000);
 const ONLINE_WINDOW_MS = 30000;   // ไม่ heartbeat เกินนี้ = ถือว่าปิดหน้าไปแล้ว
+const PLAN_MAX_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;   // กัน expiresAt เพี้ยนมาค้างยาว
+const PLAN_MAX_COURTS = 4;
+const PLAN_TOTAL_COURTS = 10;
+const PLAN_MAX_PLAYERS = 60;
 
 function creds() {
   const url = process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_URL;
@@ -61,6 +69,48 @@ function readBody(req) {
   return req.body;
 }
 
+function text(raw, max) {
+  return String(raw == null ? "" : raw).replace(/[\u0000-\u001f]/g, " ").trim().slice(0, max);
+}
+
+// Rebuilt field by field — never store whatever shape the client happened to send.
+// expiresAt comes from the client because only it knows the ก๊วน's local timezone;
+// it is clamped here so a bad clock can't park a plan for months.
+function cleanPlan(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(raw.date) ? raw.date : null;
+  const start = /^\d{2}:\d{2}$/.test(raw.start) ? raw.start : null;
+  const end = /^\d{2}:\d{2}$/.test(raw.end) ? raw.end : null;
+  if (!date || !start || !end) return null;
+
+  const seen = {};
+  const courts = (Array.isArray(raw.courts) ? raw.courts : [])
+    .map((n) => parseInt(n, 10))
+    .filter((n) => n >= 1 && n <= PLAN_TOTAL_COURTS && !seen[n] && (seen[n] = true))
+    .slice(0, PLAN_MAX_COURTS);
+  if (!courts.length) return null;
+
+  const dup = {};
+  const players = (Array.isArray(raw.players) ? raw.players : [])
+    .map((n) => text(n, 20))
+    .filter((n) => n && !dup[n] && (dup[n] = true))
+    .slice(0, PLAN_MAX_PLAYERS);
+
+  const now = Date.now();
+  let expiresAt = Number(raw.expiresAt);
+  if (!isFinite(expiresAt) || expiresAt <= now) expiresAt = now + 24 * 60 * 60 * 1000;
+  if (expiresAt > now + PLAN_MAX_AHEAD_MS) expiresAt = now + PLAN_MAX_AHEAD_MS;
+
+  return {
+    v: 1,
+    venue: text(raw.venue, 40) || "สนามแบด",
+    date, start, end, courts, players,
+    note: text(raw.note, 120),
+    expiresAt,
+    updatedAt: now,
+  };
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
@@ -73,8 +123,9 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") {
       const id = cleanId(req.query && req.query.id);
-      const [raw, online] = await Promise.all([
+      const [raw, planRaw, online] = await Promise.all([
         redis(c, ["GET", KEY]),
+        redis(c, ["GET", PLAN_KEY]).catch(() => null),
         touchPresence(c, id).catch(() => 0),
       ]);
       let state = null;
@@ -85,7 +136,13 @@ module.exports = async (req, res) => {
         state = null;
         redis(c, ["DEL", KEY]).catch(() => {});
       }
-      res.status(200).json({ ok: true, state, online });
+      let plan = null;
+      if (planRaw) { try { plan = JSON.parse(planRaw); } catch (e) { plan = null; } }
+      if (plan && (!plan.expiresAt || Date.now() > plan.expiresAt)) {   // เลยเวลานัดแล้ว
+        plan = null;
+        redis(c, ["DEL", PLAN_KEY]).catch(() => {});
+      }
+      res.status(200).json({ ok: true, state, online, plan });
       return;
     }
 
@@ -103,6 +160,21 @@ module.exports = async (req, res) => {
         if (str.length > MAX_BYTES) { res.status(413).json({ ok: false, reason: "too-large" }); return; }
         await redis(c, ["SET", KEY, str, "EX", TTL_SECONDS]);
         res.status(200).json({ ok: true });
+        return;
+      }
+
+      if (body.action === "clearPlan") {
+        await redis(c, ["DEL", PLAN_KEY]);
+        res.status(200).json({ ok: true, plan: null });
+        return;
+      }
+
+      if (body.action === "setPlan") {
+        const plan = cleanPlan(body.plan);
+        if (!plan) { res.status(400).json({ ok: false, reason: "bad-plan" }); return; }
+        const ttl = Math.max(60, Math.ceil((plan.expiresAt - Date.now()) / 1000));
+        await redis(c, ["SET", PLAN_KEY, JSON.stringify(plan), "EX", ttl]);
+        res.status(200).json({ ok: true, plan });
         return;
       }
 

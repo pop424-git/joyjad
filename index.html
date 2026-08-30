@@ -112,6 +112,45 @@
   .hm b{ font-size:var(--fs-sm); font-weight:800; white-space:nowrap; }
   .hm .cap{ font-size:var(--fs-xs); color:var(--muted); }
 
+  /* ---------- นัดที่แอดมินประกาศ (แทน .hm ประจำเมื่อมีนัด) ---------- */
+  .plan-card{
+    grid-column:1/-1; text-align:left; display:flex; flex-direction:column; gap:8px;
+    background:rgba(255,255,255,.94); border:1px solid var(--border); border-radius:var(--radius);
+    padding:clamp(10px,1.8vh,16px) clamp(11px,1.8vw,18px); box-shadow:var(--shadow);
+  }
+  .plan-tag{
+    align-self:flex-start; background:var(--accent); color:var(--accent-ink);
+    font-size:var(--fs-xs); font-weight:800; letter-spacing:.6px; border-radius:999px; padding:3px 11px;
+  }
+  .pl-row{ display:flex; align-items:baseline; gap:8px; flex-wrap:wrap; min-width:0; }
+  .pl-row .ic{ font-size:var(--fs-md); line-height:1.1; }
+  .pl-row b{ font-size:var(--fs-md); font-weight:800; }
+  .pl-row .cap{ font-size:var(--fs-sm); color:var(--muted); font-weight:700; }
+  .plan-people{ border-top:1px dashed #eab8cd; padding-top:8px; }
+  .pp-head{ font-size:var(--fs-xs); font-weight:800; color:var(--accent); letter-spacing:.4px; margin-bottom:6px; }
+  .plan-names{ display:flex; flex-wrap:wrap; gap:5px; }
+  .plan-names span{
+    background:var(--accent-soft); border-radius:999px; padding:3px 10px;
+    font-size:var(--fs-xs); font-weight:700;
+  }
+  .plan-edit{ margin-top:clamp(2px,1vh,8px); }
+  body.viewer .plan-edit{ display:none; }
+
+  /* ฟอร์มตั้งนัด (ใน .drawer) */
+  .pf-grid{ display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+  .pf{ display:flex; flex-direction:column; gap:5px; min-width:0; }
+  .pf.wide{ grid-column:1/-1; }
+  .pf label{ font-size:var(--fs-xs); font-weight:800; color:var(--accent); letter-spacing:.4px; }
+  .pf input{
+    width:100%; min-width:0; background:var(--panel2); border:1px solid var(--border);
+    border-radius:10px; padding:10px 11px; font:inherit; font-size:var(--fs-sm); color:var(--text);
+  }
+  #planCourts{ display:grid; grid-template-columns:repeat(5,1fr); gap:7px; }
+  #planNames{ max-height:32vh; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+  .plan-foot{ display:flex; gap:8px; margin-top:14px; }
+  .plan-foot .btn-main{ flex:2 1 auto; }
+  .plan-foot .btn-ghost{ flex:1 1 auto; }
+
   .rule-card{
     flex:0 0 auto; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
     padding:calc(var(--pad) + 4px);
@@ -778,18 +817,9 @@
         <h1 class="logo">จอย<s class="strike">จร</s>จัด<span class="ball">🏸</span></h1>
         <div class="rule-line"></div>
         <p class="tagline">ก๊วนน้องใหม่ สนุกสนาน เป็นกันเอง</p>
-        <div class="hero-meta">
-          <div class="hm">
-            <span class="ic">📍</span>
-            <b>Grand Valley</b>
-            <span class="cap">สนามประจำ</span>
-          </div>
-          <div class="hm">
-            <span class="ic">🕖</span>
-            <b>ศุกร์ 19:00 - 21:00</b>
-            <b>อาทิตย์ 18:00 - 20:00</b>
-          </div>
-        </div>
+        <!-- มีนัดที่แอดมินตั้งไว้ = การ์ดนัด, ไม่มี = เวลาประจำของก๊วน (เติมโดย renderPlan) -->
+        <div class="hero-meta" id="heroMeta"></div>
+        <button class="icon-btn plan-edit" id="btnEditPlan">ตั้งนัดวันนี้</button>
       </div>
 
       <div class="rule-card">
@@ -972,6 +1002,45 @@
     </div>
     <div class="note">สวิตช์เขียว = ลงเล่นวันนี้ · ปิดสวิตช์คนที่มาแล้ว = กลับบ้านแล้ว (ออกจากสนามและคิวทันที แต่ยังนับในการหารค่าใช้จ่าย) · เปิดคนจากรายชื่อที่จำไว้ = ต่อท้ายคิวทันที · กด ✕ = เอาออกจากก๊วนวันนี้ (ไม่นับเงิน)</div>
     <button class="close-drawer" id="btnCloseManage">ปิด</button>
+  </div>
+</div>
+
+<div class="overlay" id="planOverlay">
+  <div class="drawer">
+    <h2>นัดครั้งถัดไป</h2>
+    <div class="note" style="margin:0 0 12px">ตั้งไว้ล่วงหน้าได้ — ทุกคนที่เปิดลิงก์จะเห็นหน้าแรก · การ์ดหายเองหลังเลยเวลาจบ 3 ชั่วโมง</div>
+    <div class="pf-grid">
+      <div class="pf wide">
+        <label for="planVenue">สนาม</label>
+        <input id="planVenue" maxlength="40" placeholder="Grand Valley" autocomplete="off">
+      </div>
+      <div class="pf wide">
+        <label for="planDate">วันที่</label>
+        <input id="planDate" type="date">
+      </div>
+      <div class="pf">
+        <label for="planStart">เริ่ม</label>
+        <input id="planStart" type="time" step="300">
+      </div>
+      <div class="pf">
+        <label for="planEnd">เลิก</label>
+        <input id="planEnd" type="time" step="300">
+      </div>
+    </div>
+    <div class="plist-label">คอร์ทที่จองไว้ · เลือกได้ถึง 4</div>
+    <div id="planCourts"></div>
+    <div class="note-line" id="planCourtNote"></div>
+    <div class="plist-label">ใครมาบ้าง · แตะเลือกจากรายชื่อ</div>
+    <div class="addrow" style="margin-bottom:8px">
+      <input id="planNewName" placeholder="เพิ่มชื่อใหม่" maxlength="20" autocomplete="off">
+      <button class="btn btn-main" id="btnPlanAddName">เพิ่ม</button>
+    </div>
+    <div class="chip-grid" id="planNames"></div>
+    <div class="plan-foot">
+      <button class="btn btn-main" id="btnPlanSave">บันทึกนัด</button>
+      <button class="btn btn-ghost" id="btnPlanClear">ล้างนัด</button>
+    </div>
+    <button class="close-drawer" id="btnClosePlan">ปิด</button>
   </div>
 </div>
 
@@ -1279,6 +1348,202 @@ function stampRoster(names){
   saveRoster();
 }
 
+/* ================= นัดที่แอดมินประกาศ (แชร์ผ่าน /api/state เส้นเดิม) =================
+   เก็บคนละ key กับ state ก๊วน — จบก๊วนแล้วการ์ดนัดยังอยู่จนเลยเวลาเลิก 3 ชม.
+   แอดมินเท่านั้นที่แก้ได้ คนอื่นเห็นอย่างเดียว */
+var PLAN_GRACE_MS = 3 * 60 * 60 * 1000;
+var plan = null;          // นัดล่าสุดจาก server (null = ไม่มี หรือหมดอายุแล้ว)
+var planApplied = 0;      // updatedAt ของนัดที่เติมลงหน้าตั้งค่าไปแล้ว — กันเติมทับที่แอดมินเพิ่งแก้เอง
+var planDraft = null;     // ค่าที่กำลังแก้อยู่ในฟอร์ม
+var TH_DAYS = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"];
+var TH_MONS = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+function activePlan(){ return (plan && plan.expiresAt > Date.now()) ? plan : null; }
+function pad2(n){ return (n<10?"0":"") + n; }
+function ymd(d){ return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate()); }
+function parseYMD(s){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(s||""));
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : null;
+}
+/* เวลาเลิกของนัดตามเวลาเครื่อง (server ไม่รู้ timezone ของก๊วน) — เลิกก่อนเริ่ม = ข้ามเที่ยงคืน */
+function planEndsAt(p){
+  var d = parseYMD(p.date), e = /^(\d{2}):(\d{2})$/.exec(p.end||""), s = /^(\d{2}):(\d{2})$/.exec(p.start||"");
+  if(!d || !e) return 0;
+  var end = new Date(d.getFullYear(), d.getMonth(), d.getDate(), +e[1], +e[2]);
+  if(s && (+e[1]*60 + +e[2]) <= (+s[1]*60 + +s[2])) end.setDate(end.getDate() + 1);
+  return end.getTime();
+}
+function fmtPlanDay(p){
+  var d = parseYMD(p.date);
+  if(!d) return "นัดถัดไป";
+  var today = new Date(); today.setHours(0,0,0,0);
+  var diff = Math.round((d - today) / 86400000);
+  var name = TH_DAYS[d.getDay()] + " " + d.getDate() + " " + TH_MONS[d.getMonth()];
+  if(diff === 0) return "วันนี้ · " + name;
+  if(diff === 1) return "พรุ่งนี้ · " + name;
+  return name;
+}
+function defaultHeroHTML(){
+  return '<div class="hm"><span class="ic">📍</span><b>Grand Valley</b><span class="cap">สนามประจำ</span></div>'
+       + '<div class="hm"><span class="ic">🕖</span><b>ศุกร์ 19:00 - 21:00</b><b>อาทิตย์ 18:00 - 20:00</b></div>';
+}
+function renderPlan(){
+  var box = document.getElementById("heroMeta");
+  if(!box) return;
+  var p = activePlan(), btn = document.getElementById("btnEditPlan");
+  if(btn) btn.textContent = p ? "แก้ไขนัด" : "ตั้งนัดวันนี้";
+  if(!p){ box.innerHTML = defaultHeroHTML(); return; }
+
+  var names = p.players || [];
+  var html = '<div class="plan-card">'
+    + '<div class="plan-tag">' + esc(fmtPlanDay(p)) + '</div>'
+    + '<div class="pl-row"><span class="ic">📍</span><b>' + esc(p.venue) + '</b>'
+    +   '<span class="cap">คอร์ท ' + esc(p.courts.join(", ")) + '</span></div>'
+    + '<div class="pl-row"><span class="ic">🕖</span><b>' + esc(p.start) + ' - ' + esc(p.end) + '</b>'
+    +   '<span class="cap">' + p.courts.length + ' สนาม</span></div>';
+  if(p.note) html += '<div class="pl-row"><span class="ic">📝</span><span class="cap">' + esc(p.note) + '</span></div>';
+  html += '<div class="plan-people"><div class="pp-head">'
+        + (names.length ? "มา " + names.length + " คน" : "ยังไม่ได้ลงชื่อว่าใครมา") + '</div>'
+        + (names.length ? '<div class="plan-names">' + names.map(function(n){ return '<span>' + dispName(n) + '</span>'; }).join("") + '</div>' : "")
+        + '</div></div>';
+  box.innerHTML = html;
+}
+/* นัดใหม่ (หรือเพิ่งเปิดแอปแล้วเจอนัดที่ตั้งไว้) = เติมสนาม + รายชื่อให้หน้าตั้งค่า ครั้งเดียวต่อนัด */
+function applyPlanToSetup(p){
+  if(!isAdmin || !p || phase !== "setup" || p.updatedAt === planApplied) return;
+  planApplied = p.updatedAt;
+  var cs = (p.courts || []).slice(0, MAX_COURTS);
+  if(cs.length){ courtCount = cs.length; selectedCourts = cs.slice(); }
+  var names = p.players || [];
+  names.forEach(function(n){ rosterAdd(n); });      // ชื่อในนัดที่หลุดจากรายชื่อส่วนกลาง ให้เพิ่มกลับ
+  if(names.length) picked = names.slice();
+  saveRoster();
+  renderSetup();
+}
+function setPlanFromServer(remote){
+  plan = (remote && remote.expiresAt > Date.now()) ? remote : null;
+  renderPlan();
+  // เรียกทุกรอบ — ตัว applyPlanToSetup กันเติมซ้ำเอง เผื่อตอนนัดมาถึงแอดมินอยู่ขั้นอื่น
+  if(plan) applyPlanToSetup(plan);
+}
+function pushPlan(p){
+  if(typeof fetch !== "function"){ toast("เครื่องนี้บันทึกนัดไม่ได้", true); return; }
+  fetch(STATE_API, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"setPlan", plan:p })
+  })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function(d){
+      if(!d || !d.ok || !d.plan) throw new Error("bad");
+      plan = d.plan; planApplied = 0;         // นัดที่เพิ่งบันทึก = เติมสนาม/รายชื่อให้รอบหนึ่ง
+      renderPlan();
+      applyPlanToSetup(plan);
+      toast("ตั้งนัดแล้ว — ทุกคนเห็นบนหน้าแรก");
+    })
+    .catch(function(){ toast("บันทึกนัดไม่ได้ — เช็คเน็ตแล้วลองใหม่", true); });
+}
+function clearPlanRemote(){
+  if(!confirm("ล้างนัดที่ประกาศไว้?\n\nหน้าแรกจะกลับไปโชว์เวลาประจำของก๊วน")) return;
+  fetch(STATE_API, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"clearPlan" })
+  })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function(){
+      plan = null; planApplied = 0;
+      renderPlan(); closePlanForm();
+      toast("ล้างนัดแล้ว");
+    })
+    .catch(function(){ toast("ล้างนัดไม่ได้ — เช็คเน็ตแล้วลองใหม่", true); });
+}
+
+/* ---- ฟอร์มตั้งนัด (แอดมินเท่านั้น) ---- */
+function openPlanForm(){
+  if(!isAdmin) return;
+  var p = activePlan();
+  planDraft = {
+    courts: p ? (p.courts || []).slice() : selectedCourts.slice(0, MAX_COURTS),
+    players: p ? (p.players || []).slice() : picked.slice()
+  };
+  document.getElementById("planVenue").value = p ? p.venue : "Grand Valley";
+  document.getElementById("planDate").value  = p ? p.date  : ymd(new Date());
+  document.getElementById("planStart").value = p ? p.start : "18:00";
+  document.getElementById("planEnd").value   = p ? p.end   : "20:00";
+  renderPlanForm();
+  document.getElementById("planOverlay").classList.add("show");
+}
+function closePlanForm(){
+  planDraft = null;
+  document.getElementById("planOverlay").classList.remove("show");
+}
+function renderPlanForm(){
+  if(!planDraft) return;
+  var ch = "", i;
+  for(i=1;i<=TOTAL_COURTS;i++){
+    ch += '<div class="cslot'+(planDraft.courts.indexOf(i)>=0?" on":"")+'" data-ps="'+i+'">'
+        + courtLinesSVG() + '<div class="cslot-no">'+i+'</div></div>';
+  }
+  document.getElementById("planCourts").innerHTML = ch;
+
+  var n = planDraft.courts.length, note = document.getElementById("planCourtNote");
+  note.className = "note-line " + (n ? "good" : "bad");
+  note.textContent = n ? ("เลือกไว้ " + n + " คอร์ท") : "เลือกคอร์ทอย่างน้อย 1 ก่อนบันทึก";
+
+  var list = rosterSorted(), grid = document.getElementById("planNames");
+  grid.innerHTML = list.length ? list.map(function(r){
+    var at = planDraft.players.indexOf(r.name);
+    return '<div class="pchip'+(at>=0?" on":"")+'" data-pp="'+esc(r.name)+'">'
+         + '<div class="nm">'+dispName(r.name)+'</div>'
+         + (at>=0 ? '<div class="ord">'+(at+1)+'</div>' : "")
+         + '</div>';
+  }).join("") : '<div class="empty-msg">ยังไม่มีรายชื่อ — พิมพ์ชื่อด้านบนแล้วกดเพิ่ม</div>';
+}
+function togglePlanCourt(no){
+  if(!planDraft) return;
+  var at = planDraft.courts.indexOf(no);
+  if(at >= 0) planDraft.courts.splice(at, 1);
+  else{
+    if(planDraft.courts.length >= MAX_COURTS) planDraft.courts.shift();   // เต็มแล้ว: ปลดตัวที่เลือกไว้นานสุด
+    planDraft.courts.push(no);
+  }
+  renderPlanForm();
+}
+function togglePlanName(name){
+  if(!planDraft) return;
+  var at = planDraft.players.indexOf(name);
+  if(at >= 0) planDraft.players.splice(at, 1);
+  else planDraft.players.push(name);
+  renderPlanForm();
+}
+function addPlanName(){
+  var input = document.getElementById("planNewName");
+  var name = String(input.value || "").trim().slice(0, 20);
+  if(!name) return;
+  rosterAdd(name);
+  if(planDraft && planDraft.players.indexOf(name) < 0) planDraft.players.push(name);
+  input.value = "";
+  renderPlanForm();
+  input.focus();
+}
+function savePlanForm(){
+  if(!planDraft) return;
+  var venue = String(document.getElementById("planVenue").value || "").trim().slice(0,40) || "Grand Valley";
+  var date  = document.getElementById("planDate").value;
+  var start = document.getElementById("planStart").value;
+  var end   = document.getElementById("planEnd").value;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date)){ toast("ใส่วันที่ก่อน", true); return; }
+  if(!/^\d{2}:\d{2}$/.test(start) || !/^\d{2}:\d{2}$/.test(end)){ toast("ใส่เวลาเริ่ม-เลิกก่อน", true); return; }
+  if(!planDraft.courts.length){ toast("เลือกคอร์ทอย่างน้อย 1", true); return; }
+
+  var p = { v:1, venue:venue, date:date, start:start, end:end,
+            courts:planDraft.courts.slice().sort(function(a,b){ return a-b; }),
+            players:planDraft.players.slice(), note:"" };
+  p.expiresAt = planEndsAt(p) + PLAN_GRACE_MS;
+  if(p.expiresAt <= Date.now()){ toast("เวลานัดผ่านไปแล้ว — ตั้งวันหรือเวลาใหม่", true); return; }
+  pushPlan(p);
+  closePlanForm();
+}
+
 function applySnapshot(d){
   if(!d || d.v !== 3) return false;
   if(!Array.isArray(d.players) || !Array.isArray(d.courts)) return false;
@@ -1369,6 +1634,7 @@ function renderSetup(){
           + '<div class="cap">สนาม</div></div>';
   }
   document.getElementById("courtChoices").innerHTML = html;
+  renderPlan();
   reconcileSelectedCourts();
   saveRoster();
   renderCourtSlots();
@@ -2112,6 +2378,7 @@ function pollState(){
       if(!d || !d.ok) throw new Error("bad");
       lastLiveAt = new Date();
       onlineCount = d.online || 0;
+      setPlanFromServer(d.plan);
       if(d.state && applySnapshot(d.state)){ showScreen("play"); renderPlay(); }
       else showViewerEmpty();
       paintLive(true); paintOnline();
@@ -2126,6 +2393,7 @@ function heartbeat(){
     .then(function(d){
       if(!d || !d.ok) return;
       onlineCount = d.online || 0; paintOnline();
+      if(!planDraft) setPlanFromServer(d.plan);   // กำลังกรอกฟอร์มอยู่ อย่าเพิ่งวาดทับ
       syncAdminState(d.state);
     })
     .catch(function(){});
@@ -2204,7 +2472,7 @@ document.addEventListener("click", function(e){
   var t = e.target.closest(
     "[data-cc],[data-pk],[data-rx],[data-ap],[data-ac],[data-court],[data-end],[data-move],"
     + "[data-out],[data-in],[data-pick],[data-confirm],[data-close],[data-toggle],[data-del],[data-join],"
-    + "[data-cs]"
+    + "[data-cs],[data-ps],[data-pp]"
   );
   if(!t) return;
 
@@ -2221,6 +2489,8 @@ document.addEventListener("click", function(e){
     renderSetup();
   }
   else if(t.hasAttribute("data-cs"))   toggleCourtSlot(+t.getAttribute("data-cs"));
+  else if(t.hasAttribute("data-ps"))   togglePlanCourt(+t.getAttribute("data-ps"));
+  else if(t.hasAttribute("data-pp"))   togglePlanName(t.getAttribute("data-pp"));
   else if(t.hasAttribute("data-pk"))   togglePick(t.getAttribute("data-pk"));
   else if(t.hasAttribute("data-ap"))   arrangeAdd(+t.getAttribute("data-ap"));
   else if(t.hasAttribute("data-ac"))   arrangeRemove(+t.getAttribute("data-ac"), +t.getAttribute("data-as"));
@@ -2286,6 +2556,15 @@ document.getElementById("btnAddRoster").addEventListener("click", addRosterName)
 document.getElementById("newRosterName").addEventListener("keydown", function(e){ if(e.key === "Enter") addRosterName(); });
 document.getElementById("btnSyncRefresh").addEventListener("click", fetchRoster);
 document.getElementById("btnRosterReset").addEventListener("click", resetRosterAll);
+
+/* ตั้งนัด (แอดมินเท่านั้น — ปุ่มถูกซ่อนในโหมดดูสด) */
+document.getElementById("btnEditPlan").addEventListener("click", openPlanForm);
+document.getElementById("btnClosePlan").addEventListener("click", closePlanForm);
+document.getElementById("planOverlay").addEventListener("click", function(e){ if(e.target === this) closePlanForm(); });
+document.getElementById("btnPlanSave").addEventListener("click", savePlanForm);
+document.getElementById("btnPlanClear").addEventListener("click", clearPlanRemote);
+document.getElementById("btnPlanAddName").addEventListener("click", addPlanName);
+document.getElementById("planNewName").addEventListener("keydown", function(e){ if(e.key === "Enter") addPlanName(); });
 
 /* manage */
 document.getElementById("btnManage").addEventListener("click", openManage);
@@ -2356,12 +2635,17 @@ window.__bq = {
   isAdmin:function(){ return isAdmin; }, pollState:pollState, startViewer:startViewer,
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
-  endedSession:function(){ return endedSession; }
+  endedSession:function(){ return endedSession; },
+  plan:function(){ return plan; }, activePlan:activePlan, renderPlan:renderPlan,
+  openPlanForm:openPlanForm, closePlanForm:closePlanForm, savePlanForm:savePlanForm,
+  togglePlanCourt:togglePlanCourt, togglePlanName:togglePlanName, planEndsAt:planEndsAt,
+  planDraft:function(){ return planDraft; }
 };
 
 /* ================= boot ================= */
 (function boot(){
   loadRoster();
+  renderPlan();                              // ยังไม่รู้ว่ามีนัดไหม — โชว์เวลาประจำไปก่อน
   cost = { court:prices.court, shuttles:0, tube:prices.tube };
 
   if(!isAdmin){ startViewer(); return; }     // เปิดลิงก์เฉยๆ = จอดูสด
