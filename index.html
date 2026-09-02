@@ -686,6 +686,44 @@
   @media (orientation:portrait){ .co-names{ flex-direction:column; gap:clamp(4px,1vh,14px) 0; } }
   .co-hint{ flex:0 0 auto; font-size:clamp(12px,1.1vw + .5vh,19px); color:rgba(255,255,255,.6); font-weight:700; }
 
+  /* ---------- QR จ่ายเงิน ---------- */
+  #btnQr{ display:none; }                       /* โผล่เมื่อมี QR บนเซิร์ฟเวอร์ (paintQrButton) */
+  body.viewer .header-btns #btnQr.on{ display:inline-block; }   /* คนดูก็ต้องสแกนจ่ายได้ */
+  #btnQr.on{ display:inline-block; border-color:var(--accent); color:var(--accent); font-weight:800; }
+  #qrView{
+    position:fixed; inset:0; z-index:95; display:none;
+    align-items:center; justify-content:center; padding:clamp(12px,3vw,32px);
+    background:rgba(60,8,32,.6); -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+  }
+  #qrView.show{ display:flex; }
+  .qr-card{
+    width:min(100%,560px); max-height:100%; overflow-y:auto; text-align:center;
+    display:flex; flex-direction:column; align-items:center; gap:clamp(8px,1.6vh,16px);
+    background:var(--panel); border:1px solid var(--border); border-radius:var(--radius);
+    padding:clamp(14px,2.6vh,26px) clamp(12px,2.4vw,26px); box-shadow:0 18px 50px rgba(60,8,32,.4);
+  }
+  .qr-per{ display:flex; align-items:baseline; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .qr-per .lbl{ font-size:var(--fs-md); font-weight:800; color:var(--muted); }
+  .qr-per .val{ font-size:clamp(40px,9vw,72px); font-weight:900; color:var(--accent); line-height:1; }
+  .qr-per .unit{ font-size:var(--fs-md); font-weight:800; color:var(--accent); }
+  .qr-note{ font-size:var(--fs-xs); color:var(--muted); line-height:1.5; }
+  /* รูปต้องยอมเล็กลงตามจอ ไม่งั้นชื่อบัญชีกับปุ่มปิดตกขอบล่างบนจอเตี้ย */
+  .qr-img{
+    width:auto; max-width:min(100%,400px); max-height:52dvh; object-fit:contain;
+    border-radius:12px; border:1px solid var(--border); background:#fff; display:block;
+  }
+  .qr-acct{ font-size:var(--fs-sm); font-weight:800; overflow-wrap:anywhere; }
+  .qr-foot{ display:flex; gap:8px; width:100%; }
+  .qr-foot .btn{ flex:1 1 auto; }
+  /* กล่องอัปในหน้าคิดเงิน */
+  .qr-setup{ display:flex; flex-direction:column; gap:8px; }
+  .qr-setup .row{ display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  .qr-setup input[type="text"]{
+    flex:1 1 160px; min-width:0; background:var(--panel2); border:1px solid var(--border);
+    border-radius:10px; padding:9px 11px; font:inherit; font-size:var(--fs-sm); color:var(--text);
+  }
+  .qr-thumb{ width:64px; height:64px; object-fit:cover; border-radius:10px; border:1px solid var(--border); background:#fff; }
+
   #toast{
     position:fixed; left:50%; bottom:26px; transform:translateX(-50%) translateY(20px);
     background:#7a1440; border:1px solid #7a1440; color:#fff;
@@ -984,6 +1022,7 @@
         <div class="savechip online" id="onlineChip" style="display:none"><span class="eye">👀</span><span id="onlineText"></span></div>
         <div class="savechip" id="liveChip"><span class="dot"></span><span id="liveText">ดูสด</span></div>
         <div class="savechip" id="saveChip"><span class="dot"></span><span id="saveText">พร้อม</span></div>
+        <button class="icon-btn" id="btnQr">💸 จ่ายเงิน</button>
         <button class="icon-btn" id="btnManage">รายชื่อ</button>
         <button class="icon-btn warn" id="btnFinish">สิ้นสุดก๊วน</button>
       </div>
@@ -1061,6 +1100,24 @@
         <div class="costline total"><span>รวมทั้งหมด</span><b id="outTotal2">0 บาท</b></div>
         <div class="costline note-extra" id="outExtra"></div>
       </div>
+
+      <div class="costcard qr-setup">
+        <div class="plist-label" style="margin-top:0">QR จ่ายเงิน · ทุกเครื่องที่เปิดอยู่สแกนได้</div>
+        <div class="row">
+          <img class="qr-thumb" id="qrThumb" alt="QR จ่ายเงิน" style="display:none">
+          <div class="note" id="qrStatus" style="margin:0; flex:1 1 140px">ยังไม่ได้อัป QR</div>
+        </div>
+        <div class="row">
+          <input type="text" id="qrAccount" maxlength="60" placeholder="ชื่อบัญชี (เช่น MISS TOUNKHAM XAYASITH)" autocomplete="off">
+        </div>
+        <div class="row">
+          <input type="file" id="qrFile" accept="image/*" hidden>
+          <button class="btn btn-main" id="btnQrPick">เลือกรูป QR</button>
+          <button class="btn btn-ghost" id="btnQrShow">ดูตัวอย่าง</button>
+          <button class="btn btn-ghost" id="btnQrClear">ลบ QR</button>
+        </div>
+        <div class="note" style="margin:0">รูปถูกย่อก่อนอัปโดยอัตโนมัติ · เก็บบนเซิร์ฟเวอร์ ไม่ได้อยู่ในโค้ด · แก้ชื่อบัญชีแล้วกดออกจากช่อง บันทึกให้เอง</div>
+      </div>
     </div>
     <div class="wiz-foot">
       <button class="btn btn-ghost" id="btnBackSummary">ย้อนกลับ</button>
@@ -1123,6 +1180,15 @@
     <button class="close-drawer" id="btnClosePlan">ปิด</button>
   </div>
 </div>
+
+<div id="qrView"><div class="qr-card">
+  <div class="qr-per"><span class="lbl">คนละ</span><span class="val" id="qrPer">0</span><span class="unit">บาท</span></div>
+  <div class="qr-note" id="qrPerNote"></div>
+  <img class="qr-img" id="qrImg" alt="QR พร้อมเพย์สำหรับจ่ายค่าก๊วน">
+  <div class="qr-acct" id="qrAcct"></div>
+  <div class="qr-note">สแกนแล้วกรอกยอดเอง (QR นี้ไม่ได้ล็อกจำนวนเงิน)</div>
+  <div class="qr-foot"><button class="btn btn-ghost" id="btnQrClose">ปิด</button></div>
+</div></div>
 
 <div id="callout"><div class="co-card">
   <div class="co-court" id="coCourt"></div>
@@ -1278,6 +1344,144 @@ function checkCallout(remote){
   if(Date.now() - c.at > CALLOUT_STALE_MS){ calloutSeen = c.at; return; }
   showCallout(c);
 }
+
+/* ---- QR จ่ายเงิน ----
+   รูปเก็บบนเซิร์ฟเวอร์ (ไม่ได้อยู่ในโค้ด) แอดมินอัปครั้งเดียว ทุกเครื่องที่เปิดอยู่สแกนได้
+   poll พกมาแค่เวลาที่อัปล่าสุด (qrAt) รูปจริงดึงตอนเปลี่ยนเท่านั้น แล้วแคชไว้ในเครื่อง */
+var QKEY = "badminton-qr-v1";
+var QR_MAX_SIDE = 700;              // ย่อก่อนอัป — QR ขนาดนี้สแกนจากจอมือถือได้สบาย
+var qrPay = null;                   // {data, account, updatedAt}
+var qrFetching = false;
+function loadQrCache(){
+  if(!storageOK) return;
+  try{
+    var d = JSON.parse(localStorage.getItem(QKEY));
+    if(d && d.data && d.updatedAt) qrPay = d;
+  }catch(e){}
+}
+function saveQrCache(){
+  if(!storageOK) return;
+  try{
+    if(qrPay) localStorage.setItem(QKEY, JSON.stringify(qrPay));
+    else localStorage.removeItem(QKEY);
+  }catch(e){}                        // รูปใหญ่เกินโควตาเบราว์เซอร์ก็ไม่เป็นไร ดึงใหม่ได้
+}
+function paintQrButton(){
+  var btn = document.getElementById("btnQr");
+  if(btn) btn.classList.toggle("on", !!qrPay);
+  var st = document.getElementById("qrStatus"), th = document.getElementById("qrThumb");
+  if(st){
+    st.textContent = qrPay
+      ? "อัปแล้ว · " + (qrPay.account || "ยังไม่ได้ใส่ชื่อบัญชี")
+      : "ยังไม่ได้อัป QR";
+  }
+  if(th){
+    th.style.display = qrPay ? "block" : "none";
+    if(qrPay) th.src = qrPay.data;
+  }
+  var acct = document.getElementById("qrAccount");
+  if(acct && qrPay && document.activeElement !== acct && !acct.value) acct.value = qrPay.account || "";
+}
+/* poll บอกว่ามีรูปใหม่ (หรือถูกลบ) — ตามให้ทัน */
+function syncQr(remoteAt){
+  var at = +remoteAt || 0;
+  if(!at){
+    if(qrPay){ qrPay = null; saveQrCache(); paintQrButton(); closeQrView(); }
+    return;
+  }
+  if(qrPay && qrPay.updatedAt === at) return;
+  fetchQr();
+}
+function fetchQr(){
+  if(qrFetching || typeof fetch !== "function") return;
+  qrFetching = true;
+  fetch(STATE_API + "?qr=1", { headers:{ Accept:"application/json" } })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function(d){
+      qrFetching = false;
+      if(!d || !d.ok) return;
+      qrPay = d.qr && d.qr.data ? d.qr : null;
+      saveQrCache(); paintQrButton();
+    })
+    .catch(function(){ qrFetching = false; });   // เน็ตล่ม: ใช้รูปที่แคชไว้ต่อได้
+}
+/* ย่อรูปก่อนอัป — รูปจากกล้อง/สกรีนช็อตมักหลายร้อย KB ส่งดิบไปก็เปลืองเปล่า */
+function shrinkImage(file, cb){
+  var reader = new FileReader();
+  reader.onerror = function(){ cb(null); };
+  reader.onload = function(){
+    var img = new Image();
+    img.onerror = function(){ cb(null); };
+    img.onload = function(){
+      var w = img.naturalWidth, h = img.naturalHeight;
+      if(!w || !h){ cb(null); return; }
+      var scale = Math.min(1, QR_MAX_SIDE / Math.max(w, h));
+      var cv = document.createElement("canvas");
+      cv.width = Math.round(w * scale); cv.height = Math.round(h * scale);
+      var ctx = cv.getContext("2d");
+      ctx.fillStyle = "#fff"; ctx.fillRect(0, 0, cv.width, cv.height);   // กัน PNG โปร่งใสกลายเป็นดำ
+      ctx.drawImage(img, 0, 0, cv.width, cv.height);
+      try{ cb(cv.toDataURL("image/jpeg", .85)); }catch(e){ cb(null); }
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function uploadQr(file){
+  if(!isAdmin || !file) return;
+  if(!/^image\//.test(file.type)){ toast("ไฟล์นี้ไม่ใช่รูป", true); return; }
+  toast("กำลังย่อรูป…");
+  shrinkImage(file, function(data){
+    if(!data){ toast("อ่านรูปไม่ได้ ลองรูปอื่น", true); return; }
+    var acct = document.getElementById("qrAccount");
+    pushQr(data, acct ? acct.value : "");
+  });
+}
+function pushQr(data, account){
+  if(typeof fetch !== "function"){ toast("เครื่องนี้อัปไม่ได้", true); return; }
+  fetch(STATE_API, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"setQr", qr:{ data:data, account:String(account||"").trim() } })
+  })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function(d){
+      if(!d || !d.ok || !d.qr) throw new Error("bad");
+      qrPay = d.qr; saveQrCache(); paintQrButton();
+      toast("อัป QR แล้ว — ทุกเครื่องสแกนได้");
+    })
+    .catch(function(){ toast("อัป QR ไม่ได้ — รูปใหญ่ไปหรือเน็ตมีปัญหา", true); });
+}
+function clearQrRemote(){
+  if(!qrPay){ toast("ยังไม่มี QR ให้ลบ", true); return; }
+  if(!confirm("ลบ QR จ่ายเงิน?\n\nทุกเครื่องจะไม่เห็นปุ่มจ่ายเงินอีก")) return;
+  fetch(STATE_API, {
+    method:"POST", headers:{ "Content-Type":"application/json" },
+    body: JSON.stringify({ action:"clearQr" })
+  })
+    .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
+    .then(function(){
+      qrPay = null; saveQrCache(); paintQrButton(); closeQrView();
+      toast("ลบ QR แล้ว");
+    })
+    .catch(function(){ toast("ลบ QR ไม่ได้ — เช็คเน็ตแล้วลองใหม่", true); });
+}
+function perHeadAmount(){
+  var heads = players.length || 1;
+  var shuttleCost = cost.shuttles > 0 && cost.tube > 0 ? (cost.shuttles / SHUTTLES_PER_TUBE) * cost.tube : 0;
+  return { per: Math.ceil((cost.court + shuttleCost) / heads), total: cost.court + shuttleCost, heads: players.length };
+}
+function openQrView(){
+  if(!qrPay){ toast("ยังไม่มี QR — แอดมินอัปที่หน้าคิดเงิน", true); return; }
+  var t = perHeadAmount();
+  document.getElementById("qrImg").src = qrPay.data;
+  document.getElementById("qrAcct").textContent = qrPay.account || "";
+  document.getElementById("qrPer").textContent = t.total > 0 ? t.per.toLocaleString("th-TH") : "—";
+  document.getElementById("qrPerNote").textContent = t.total > 0
+    ? (t.heads + " คน · รวม " + money(t.total))
+    : "ยังไม่ได้กรอกค่าใช้จ่าย — สแกนไว้ก่อนได้";
+  document.getElementById("qrView").classList.add("show");
+}
+function closeQrView(){ document.getElementById("qrView").classList.remove("show"); }
 
 function money(n){
   var r = Math.round(n*100)/100;
@@ -2442,13 +2646,13 @@ function renderCost(){
   document.getElementById("inShuttles").value = cost.shuttles || "";
   document.getElementById("inTube").value     = cost.tube || "";
   document.getElementById("costSub").textContent = "หารเท่ากันทุกคนที่มาวันนี้ · ปัดขึ้นเป็นบาท";
+  paintQrButton();
   recalcCost();
 }
 function recalcCost(){
   var heads = players.length || 1;
   var shuttleCost = cost.shuttles > 0 && cost.tube > 0 ? (cost.shuttles / SHUTTLES_PER_TUBE) * cost.tube : 0;
-  var total = cost.court + shuttleCost;
-  var per = Math.ceil(total / heads);
+  var t = perHeadAmount(), total = t.total, per = t.per;
   document.getElementById("outCourt").textContent = money(cost.court);
   document.getElementById("outShuttleLbl").textContent =
     cost.shuttles > 0 ? "ค่าลูกแบด (" + cost.shuttles + " ลูก · " + (cost.shuttles/SHUTTLES_PER_TUBE).toFixed(2) + " หลอด)" : "ค่าลูกแบด";
@@ -2554,6 +2758,7 @@ function pollState(){
       lastLiveAt = new Date();
       onlineCount = d.online || 0;
       checkCallout(d.state);
+      syncQr(d.qrAt);
       setPlanFromServer(d.plan);
       if(d.state && applySnapshot(d.state)){ showScreen("play"); renderPlay(); }
       else showViewerEmpty();
@@ -2570,6 +2775,7 @@ function heartbeat(){
       if(!d || !d.ok) return;
       onlineCount = d.online || 0; paintOnline();
       checkCallout(d.state);
+      syncQr(d.qrAt);
       if(!planDraft) setPlanFromServer(d.plan);   // กำลังกรอกฟอร์มอยู่ อย่าเพิ่งวาดทับ
       syncAdminState(d.state);
     })
@@ -2737,6 +2943,24 @@ document.getElementById("btnRosterReset").addEventListener("click", resetRosterA
 /* ป้ายเรียกลงสนาม — แตะที่ไหนก็ปิด (ทุกเครื่อง ไม่ใช่แค่แอดมิน) */
 document.getElementById("callout").addEventListener("click", hideCallout);
 
+/* QR จ่ายเงิน — ดูได้ทุกเครื่อง แต่อัป/ลบได้เฉพาะแอดมิน */
+document.getElementById("btnQr").addEventListener("click", openQrView);
+document.getElementById("btnQrClose").addEventListener("click", closeQrView);
+document.getElementById("qrView").addEventListener("click", function(e){ if(e.target === this) closeQrView(); });
+document.getElementById("btnQrShow").addEventListener("click", openQrView);
+document.getElementById("btnQrPick").addEventListener("click", function(){ document.getElementById("qrFile").click(); });
+document.getElementById("btnQrClear").addEventListener("click", clearQrRemote);
+document.getElementById("qrFile").addEventListener("change", function(){
+  if(this.files && this.files[0]) uploadQr(this.files[0]);
+  this.value = "";                       // เลือกไฟล์เดิมซ้ำได้
+});
+/* แก้แค่ชื่อบัญชี ไม่ต้องอัปรูปใหม่ — ส่งรูปเดิมขึ้นไปพร้อมชื่อที่แก้ */
+document.getElementById("qrAccount").addEventListener("change", function(){
+  var name = this.value.trim();
+  if(!isAdmin || !qrPay || name === (qrPay.account || "")) return;
+  pushQr(qrPay.data, name);
+});
+
 /* ตั้งนัด (แอดมินเท่านั้น — ปุ่มถูกซ่อนในโหมดดูสด) */
 document.getElementById("btnEditPlan").addEventListener("click", openPlanForm);
 document.getElementById("btnClosePlan").addEventListener("click", closePlanForm);
@@ -2816,6 +3040,9 @@ window.__bq = {
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
   endedSession:function(){ return endedSession; },
+  qr:function(){ return qrPay; }, syncQr:syncQr, fetchQr:fetchQr, pushQr:pushQr, uploadQr:uploadQr,
+  openQrView:openQrView, closeQrView:closeQrView, clearQrRemote:clearQrRemote,
+  perHeadAmount:perHeadAmount, paintQrButton:paintQrButton,
   showCallout:showCallout, hideCallout:hideCallout, checkCallout:checkCallout,
   callout:function(){ return callout; },
   plan:function(){ return plan; }, activePlan:activePlan, renderPlan:renderPlan,
@@ -2827,6 +3054,7 @@ window.__bq = {
 /* ================= boot ================= */
 (function boot(){
   loadRoster();
+  loadQrCache(); paintQrButton();            // มี QR ที่แคชไว้ก็ใช้ได้ทันที ไม่ต้องรอ poll
   renderPlan();                              // ยังไม่รู้ว่ามีนัดไหม — โชว์เวลาประจำไปก่อน
   cost = { court:prices.court, shuttles:0, tube:prices.tube };
 

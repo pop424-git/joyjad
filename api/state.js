@@ -7,8 +7,12 @@
 
 const KEY = "badminton:state";
 const PLAN_KEY = "badminton:plan";
+const QR_KEY = "badminton:qr";
+const QR_AT_KEY = "badminton:qr:at";      // เวลาที่อัปล่าสุด — poll อ่านแค่ตัวนี้ รูปค่อยดึงตอนเปลี่ยน
 const ONLINE_KEY = "badminton:online";
 const MAX_BYTES = 40000;
+const QR_MAX_BYTES = 400000;              // รูปย่อแล้วราว 50KB — เผื่อไว้เยอะกันเครื่องที่ย่อไม่ได้
+const QR_TTL_SECONDS = 180 * 24 * 60 * 60;   // QR อยู่ข้ามก๊วน ต่ออายุทุกครั้งที่อัปใหม่
 const SESSION_MAX_MS = 300 * 60 * 1000;   // ก๊วนเกิน 5 ชม. = ลืมปิด ทิ้งเอง
 const TTL_SECONDS = Math.ceil(SESSION_MAX_MS / 1000);
 const ONLINE_WINDOW_MS = 30000;   // ไม่ heartbeat เกินนี้ = ถือว่าปิดหน้าไปแล้ว
@@ -111,6 +115,15 @@ function cleanPlan(raw) {
   };
 }
 
+// QR จ่ายเงิน: เก็บเป็น data URL ตรงๆ รูปเดียวใช้ทั้งก๊วน
+function cleanQr(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  const data = String(raw.data == null ? "" : raw.data);
+  if (!/^data:image\/(png|jpeg|webp);base64,[A-Za-z0-9+/=]+$/.test(data)) return null;
+  if (data.length > QR_MAX_BYTES) return null;
+  return { v: 1, data, account: text(raw.account, 60), updatedAt: Date.now() };
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
@@ -121,11 +134,21 @@ module.exports = async (req, res) => {
   }
 
   try {
+    // รูป QR เต็มๆ ดึงแยกเส้น — poll ทุก 5 วิ จะได้ไม่ลากรูปมาด้วยทุกครั้ง
+    if (req.method === "GET" && req.query && req.query.qr) {
+      const raw = await redis(c, ["GET", QR_KEY]);
+      let qr = null;
+      if (raw) { try { qr = JSON.parse(raw); } catch (e) { qr = null; } }
+      res.status(200).json({ ok: true, qr });
+      return;
+    }
+
     if (req.method === "GET") {
       const id = cleanId(req.query && req.query.id);
-      const [raw, planRaw, online] = await Promise.all([
+      const [raw, planRaw, qrStamp, online] = await Promise.all([
         redis(c, ["GET", KEY]),
         redis(c, ["GET", PLAN_KEY]).catch(() => null),
+        redis(c, ["GET", QR_AT_KEY]).catch(() => null),
         touchPresence(c, id).catch(() => 0),
       ]);
       let state = null;
@@ -142,7 +165,8 @@ module.exports = async (req, res) => {
         plan = null;
         redis(c, ["DEL", PLAN_KEY]).catch(() => {});
       }
-      res.status(200).json({ ok: true, state, online, plan });
+      const qrAt = Number(qrStamp) || 0;
+      res.status(200).json({ ok: true, state, online, plan, qrAt });
       return;
     }
 
@@ -175,6 +199,23 @@ module.exports = async (req, res) => {
         const ttl = Math.max(60, Math.ceil((plan.expiresAt - Date.now()) / 1000));
         await redis(c, ["SET", PLAN_KEY, JSON.stringify(plan), "EX", ttl]);
         res.status(200).json({ ok: true, plan });
+        return;
+      }
+
+      if (body.action === "clearQr") {
+        await pipeline(c, [["DEL", QR_KEY], ["DEL", QR_AT_KEY]]);
+        res.status(200).json({ ok: true, qr: null });
+        return;
+      }
+
+      if (body.action === "setQr") {
+        const qr = cleanQr(body.qr);
+        if (!qr) { res.status(400).json({ ok: false, reason: "bad-qr" }); return; }
+        await pipeline(c, [
+          ["SET", QR_KEY, JSON.stringify(qr), "EX", QR_TTL_SECONDS],
+          ["SET", QR_AT_KEY, String(qr.updatedAt), "EX", QR_TTL_SECONDS],
+        ]);
+        res.status(200).json({ ok: true, qr });
         return;
       }
 

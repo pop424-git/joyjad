@@ -11,6 +11,7 @@ const types = { ".html": "text/html; charset=utf-8", ".json": "application/json"
 let mockRoster = new Set();
 let mockState = null;
 let mockPlan = null;
+let mockQr = null;
 const mockOnline = new Map();
 let mockDown = false; // toggle via /api/_mock?down=1 to test offline fallback
 
@@ -29,7 +30,7 @@ http.createServer((req, res) => {
   if (rel === "/api/_mock") {
     const params = new URLSearchParams(query || "");
     if (params.has("down")) mockDown = params.get("down") === "1";
-    if (params.has("clear")) { mockRoster = new Set(); mockState = null; mockPlan = null; mockOnline.clear(); }
+    if (params.has("clear")) { mockRoster = new Set(); mockState = null; mockPlan = null; mockQr = null; mockOnline.clear(); }
     if (params.has("expireplan") && mockPlan) mockPlan.expiresAt = Date.now() - 1000;
     if (params.has("stale")) { for (const k of mockOnline.keys()) mockOnline.set(k, Date.now() - 60000); }
     if (params.has("seed")) params.get("seed").split(",").filter(Boolean).forEach((n) => mockRoster.add(n));
@@ -39,6 +40,10 @@ http.createServer((req, res) => {
 
   if (rel === "/api/state") {
     if (mockDown) { sendJSON(res, 503, { ok: false, reason: "not-configured" }); return; }
+    if (req.method === "GET" && new URLSearchParams(query || "").has("qr")) {
+      sendJSON(res, 200, { ok: true, qr: mockQr });
+      return;
+    }
     if (req.method === "GET") {
       const id = new URLSearchParams(query || "").get("id");
       const now = Date.now();
@@ -47,7 +52,10 @@ http.createServer((req, res) => {
       const startedAt = mockState && (mockState.sessionStartedAt || mockState.savedAt);
       if (startedAt && now - startedAt > 300 * 60 * 1000) mockState = null;
       if (mockPlan && (!mockPlan.expiresAt || now > mockPlan.expiresAt)) mockPlan = null;
-      sendJSON(res, 200, { ok: true, state: mockState, online: mockOnline.size, plan: mockPlan });
+      sendJSON(res, 200, {
+        ok: true, state: mockState, online: mockOnline.size, plan: mockPlan,
+        qrAt: mockQr ? mockQr.updatedAt : 0,
+      });
       return;
     }
     if (req.method === "POST") {
@@ -59,6 +67,12 @@ http.createServer((req, res) => {
         if (body.action === "clear") { mockState = null; sendJSON(res, 200, { ok: true }); return; }
         if (body.action === "set" && body.state) { mockState = body.state; sendJSON(res, 200, { ok: true }); return; }
         if (body.action === "clearPlan") { mockPlan = null; sendJSON(res, 200, { ok: true, plan: null }); return; }
+        if (body.action === "clearQr") { mockQr = null; sendJSON(res, 200, { ok: true, qr: null }); return; }
+        if (body.action === "setQr" && body.qr && /^data:image\/(png|jpeg|webp);base64,/.test(String(body.qr.data || ""))) {
+          mockQr = { v: 1, data: body.qr.data, account: String(body.qr.account || "").slice(0, 60), updatedAt: Date.now() };
+          sendJSON(res, 200, { ok: true, qr: mockQr });
+          return;
+        }
         if (body.action === "setPlan" && body.plan) {
           mockPlan = Object.assign({}, body.plan, { v: 1, updatedAt: Date.now() });
           sendJSON(res, 200, { ok: true, plan: mockPlan });
