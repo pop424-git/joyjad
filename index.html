@@ -585,6 +585,13 @@
   .perhead .val small{ font-size:.3em; font-weight:700; letter-spacing:0; margin-left:.18em; color:var(--muted); }
   .perhead .sub{ font-size:var(--fs-sm); color:var(--muted); margin-top:7px; font-weight:600; }
   .perhead .sub b{ font-weight:800; color:var(--text); }
+  /* QR ใต้ยอด — โผล่เฉพาะจอแนวนอนที่มีที่เหลือ (เปิดโดย .on จาก paintQrButton) */
+  .perqr{ display:none; }
+  .perqr img{
+    width:auto; max-width:min(100%,300px); max-height:34dvh; object-fit:contain;
+    border-radius:12px; border:1px solid var(--border); background:#fff; cursor:pointer;
+  }
+  .perqr-acct{ font-size:var(--fs-xs); color:var(--muted); font-weight:700; margin-top:5px; overflow-wrap:anywhere; }
 
   /* ---------- sheet ---------- */
   .sheet-wrap{ position:fixed; inset:0; background:rgba(90,15,48,.45); z-index:60; display:none; align-items:flex-end; justify-content:center; }
@@ -908,6 +915,13 @@
     }
     #scCost .wiz-head{ grid-area:head; }
     #scCost .perhead{ grid-area:per; display:flex; flex-direction:column; justify-content:center; align-self:stretch; }
+    /* เฉพาะจอที่สูงพอ (iPad) — มือถือแนวนอนเตี้ยเกิน ใส่ QR แล้วยอดกับชื่อบัญชีตกขอบ */
+    @media (min-height:600px){
+      #scCost .perhead .perqr.on{
+        display:flex; flex-direction:column; align-items:center;
+        margin-top:clamp(10px,2vh,20px);
+      }
+    }
     #scCost .scroll-area{ grid-area:fields; }
     #scCost .wiz-foot{ grid-area:foot; }
   }
@@ -1063,6 +1077,11 @@
       <div class="lbl">คนละ</div>
       <div class="val"><span id="outPer">0</span><small>บาท</small></div>
       <div class="sub"><span id="outHeads">0</span> คน · รวม <b id="outTotal">0 บาท</b></div>
+      <!-- จอแนวนอนมีที่เหลือใต้ยอด — เอา QR มาวางให้สแกนจากหน้านี้ได้เลย -->
+      <div class="perqr" id="perQr">
+        <img id="perQrImg" alt="QR จ่ายเงิน — แตะเพื่อดูเต็มจอ">
+        <div class="perqr-acct" id="perQrAcct"></div>
+      </div>
     </div>
 
     <div class="scroll-area">
@@ -1381,6 +1400,15 @@ function paintQrButton(){
   }
   var acct = document.getElementById("qrAccount");
   if(acct && qrPay && document.activeElement !== acct && !acct.value) acct.value = qrPay.account || "";
+  // QR ที่แปะไว้ในช่องยอดต่อคน (จอแนวนอน)
+  var box = document.getElementById("perQr");
+  if(box){
+    box.classList.toggle("on", !!qrPay);
+    if(qrPay){
+      document.getElementById("perQrImg").src = qrPay.data;
+      document.getElementById("perQrAcct").textContent = qrPay.account || "";
+    }
+  }
 }
 /* poll บอกว่ามีรูปใหม่ (หรือถูกลบ) — ตามให้ทัน */
 function syncQr(remoteAt){
@@ -2948,6 +2976,7 @@ document.getElementById("btnQr").addEventListener("click", openQrView);
 document.getElementById("btnQrClose").addEventListener("click", closeQrView);
 document.getElementById("qrView").addEventListener("click", function(e){ if(e.target === this) closeQrView(); });
 document.getElementById("btnQrShow").addEventListener("click", openQrView);
+document.getElementById("perQrImg").addEventListener("click", openQrView);   // แตะรูปเล็ก = ดูเต็มจอ
 document.getElementById("btnQrPick").addEventListener("click", function(){ document.getElementById("qrFile").click(); });
 document.getElementById("btnQrClear").addEventListener("click", clearQrRemote);
 document.getElementById("qrFile").addEventListener("change", function(){
