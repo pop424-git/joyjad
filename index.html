@@ -1371,6 +1371,7 @@ var QKEY = "badminton-qr-v1";
 var QR_MAX_SIDE = 700;              // ย่อก่อนอัป — QR ขนาดนี้สแกนจากจอมือถือได้สบาย
 var qrPay = null;                   // {data, account, updatedAt}
 var qrFetching = false;
+var moneyTime = false;              // ฝั่งคนดู: แอดมินกดสิ้นสุดก๊วนแล้วหรือยัง (มาจาก phase ใน snapshot)
 function loadQrCache(){
   if(!storageOK) return;
   try{
@@ -1386,9 +1387,11 @@ function saveQrCache(){
   }catch(e){}                        // รูปใหญ่เกินโควตาเบราว์เซอร์ก็ไม่เป็นไร ดึงใหม่ได้
 }
 function paintQrButton(){
-  // ระหว่างก๊วนยังไม่รู้ยอด — ขึ้นปุ่มจ่ายเงินไปก็ได้เลข 0 เปล่าๆ รอให้แอดมินคิดเงินก่อน
+  // ระหว่างก๊วนยังไม่ต้องมีปุ่มจ่ายเงิน — ยอดที่เห็นตอนนั้นเป็นค่าสนามที่จำมาจากก๊วนก่อน ไม่ใช่ของจริง
+  // เกณฑ์คือ "แอดมินกดสิ้นสุดก๊วนแล้ว" — คนดูรู้จาก phase ที่ติดมากับ snapshot
   var btn = document.getElementById("btnQr");
-  if(btn) btn.classList.toggle("on", !!qrPay && perHeadAmount().total > 0);
+  var money = isAdmin ? (phase === "summary" || phase === "cost") : moneyTime;
+  if(btn) btn.classList.toggle("on", !!qrPay && money);
   var st = document.getElementById("qrStatus"), th = document.getElementById("qrThumb");
   if(st){
     st.textContent = qrPay
@@ -2789,6 +2792,7 @@ function pollState(){
       lastLiveAt = new Date();
       onlineCount = d.online || 0;
       checkCallout(d.state);
+      moneyTime = !!(d.state && (d.state.phase === "summary" || d.state.phase === "cost"));
       syncQr(d.qrAt);
       setPlanFromServer(d.plan);
       if(d.state && applySnapshot(d.state)){ showScreen("play"); renderPlay(); }
