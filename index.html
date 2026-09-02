@@ -1386,8 +1386,9 @@ function saveQrCache(){
   }catch(e){}                        // รูปใหญ่เกินโควตาเบราว์เซอร์ก็ไม่เป็นไร ดึงใหม่ได้
 }
 function paintQrButton(){
+  // ระหว่างก๊วนยังไม่รู้ยอด — ขึ้นปุ่มจ่ายเงินไปก็ได้เลข 0 เปล่าๆ รอให้แอดมินคิดเงินก่อน
   var btn = document.getElementById("btnQr");
-  if(btn) btn.classList.toggle("on", !!qrPay);
+  if(btn) btn.classList.toggle("on", !!qrPay && perHeadAmount().total > 0);
   var st = document.getElementById("qrStatus"), th = document.getElementById("qrThumb");
   if(st){
     st.textContent = qrPay
@@ -2224,6 +2225,7 @@ function slotHTML(c, i, isArrange){
 
 /* ================= play ================= */
 function renderPlay(){
+  paintQrButton();                    // ปุ่มจ่ายเงินโผล่เมื่อรู้ยอดแล้วเท่านั้น
   var grid = document.getElementById("playCourts");
   var heat = courtHeat();
   grid.setAttribute("data-n", courts.length);
@@ -2689,6 +2691,7 @@ function recalcCost(){
   document.getElementById("outTotal2").textContent  = money(total);
   document.getElementById("outHeads").textContent   = players.length;
   document.getElementById("outPer").textContent     = per.toLocaleString("th-TH");
+  paintQrButton();                                  // เพิ่งกรอกค่าใช้จ่าย = ปุ่มจ่ายเงินพร้อมใช้
   var extra = per * heads - total;
   var extraEl = document.getElementById("outExtra");
   if(total <= 0){
