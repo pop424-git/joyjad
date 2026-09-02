@@ -1,0 +1,278 @@
+<title>จอยจัด พาทัวร์ทีละหน้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600&family=Chakra+Petch:wght@600;700&display=swap">
+<style>
+  :root{
+    --ground:#fffbfd; --surface:#ffffff; --ink:#2a1620; --muted:#7d6470;
+    --accent:#8c2050; --accent-ink:#ffffff; --accent-soft:#fbe7ef;
+    --accent-line:#f0b9cf; --line:#f0dde6;
+    --frame:#efdfe7;
+    --shadow:0 1px 2px rgba(122,20,64,.05), 0 10px 30px -18px rgba(122,20,64,.35);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#181016; --surface:#221720; --ink:#f6e9f0; --muted:#b39aa8;
+      --accent:#f5a9c8; --accent-ink:#2a0a19; --accent-soft:#2e1b27;
+      --accent-line:#5e2340; --line:#33232c; --frame:#3a2733;
+      --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px -18px rgba(0,0,0,.8);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#181016; --surface:#221720; --ink:#f6e9f0; --muted:#b39aa8;
+    --accent:#f5a9c8; --accent-ink:#2a0a19; --accent-soft:#2e1b27;
+    --accent-line:#5e2340; --line:#33232c; --frame:#3a2733;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 10px 30px -18px rgba(0,0,0,.8);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--ink);
+    font-family:"Anuphan","Segoe UI",system-ui,sans-serif;font-size:17px;line-height:1.72;
+    -webkit-font-smoothing:antialiased}
+  img{display:block}
+  .wrap{max-width:60rem;margin:0 auto;padding:0 1.35rem 5rem}
+  h1,h2,h3,.eyebrow,.stepno{font-family:"Chakra Petch","Anuphan",system-ui,sans-serif}
+
+  /* hero */
+  .hero{padding:3.6rem 0 .6rem;max-width:38rem}
+  .eyebrow{font-size:.76rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--accent);margin:0 0 1rem}
+  h1{font-size:clamp(2.1rem,6.5vw,3.3rem);font-weight:700;line-height:1.12;letter-spacing:-.01em;
+    margin:0 0 1.05rem;text-wrap:balance}
+  .lede{font-size:1.08rem;color:var(--muted);margin:0}
+  .lede strong{color:var(--ink);font-weight:600}
+
+  .court{display:flex;flex-direction:column;gap:3px;margin:2.9rem 0 2.5rem}
+  .court span{display:block;height:1px;background:var(--accent-line)}
+  .court span:last-child{opacity:.42}
+
+  h2{font-size:1.38rem;font-weight:700;margin:0 0 .3rem;text-wrap:balance}
+  .sub{color:var(--muted);font-size:.95rem;margin:0 0 2rem;max-width:34rem}
+
+  /* walkthrough step */
+  .step{display:grid;grid-template-columns:1fr;gap:1.4rem;align-items:center;
+    padding:2rem 0;border-top:1px solid var(--line)}
+  .step:first-of-type{border-top:0;padding-top:.4rem}
+  @media (min-width:760px){
+    .step{grid-template-columns:16.5rem 1fr;gap:2.6rem;padding:2.6rem 0}
+    .step.flip > *:first-child{order:2}
+    .step.flip .steptext{order:1}
+  }
+  .shotbox{background:var(--frame);border-radius:22px;padding:8px;box-shadow:var(--shadow);
+    max-width:16.5rem;width:100%;margin:0 auto}
+  .shotbox img{width:100%;height:auto;border-radius:15px}
+  /* step 1 shows two states side by side: plain viewer vs admin */
+  .duoshots{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;max-width:26rem;width:100%;margin:0 auto}
+  .duoshots figure{margin:0;min-width:0}
+  .duoshots .shotbox{max-width:none;border-radius:16px;padding:6px}
+  .duoshots .shotbox img{border-radius:11px}
+  .duoshots figcaption{margin-top:.55rem;text-align:center;font-size:.8rem;line-height:1.45;
+    color:var(--muted)}
+  .duoshots figure:last-child figcaption{color:var(--accent);font-weight:600}
+  @media (min-width:760px){
+    .step.duo{grid-template-columns:26rem 1fr}
+    .step.wide{grid-template-columns:24rem 1fr}
+  }
+
+  .wideshot{background:var(--frame);border-radius:16px;padding:7px;box-shadow:var(--shadow);
+    width:100%;max-width:24rem;margin:0 auto}
+  .wideshot img{width:100%;height:auto;border-radius:10px}
+
+  .steptext{min-width:0}
+  .stepno{display:inline-flex;align-items:center;justify-content:center;
+    width:1.85rem;height:1.85rem;border-radius:50%;background:var(--accent);color:var(--accent-ink);
+    font-weight:700;font-size:.9rem;font-variant-numeric:tabular-nums;margin-bottom:.7rem}
+  .steptext h3{font-size:1.22rem;font-weight:700;margin:0 0 .45rem;line-height:1.35;text-wrap:balance}
+  .steptext p{margin:0 0 .7rem;font-size:1rem}
+  .steptext p:last-child{margin-bottom:0}
+  .steptext em{font-style:normal;color:var(--accent);font-weight:600}
+  .tip{background:var(--accent-soft);border:1px solid var(--accent-line);border-radius:12px;
+    padding:.7rem .9rem;font-size:.95rem;line-height:1.6;margin-top:.9rem}
+  .tip b{font-weight:600}
+
+  /* extras grid */
+  .extras{display:grid;grid-template-columns:1fr;gap:1.5rem}
+  @media (min-width:700px){.extras{grid-template-columns:1fr 1fr 1fr;gap:1.6rem}}
+  .extra .shotbox{max-width:14rem}
+  .extra h3{font-size:1.05rem;font-weight:700;margin:1rem 0 .3rem;color:var(--accent);text-align:center}
+  .extra p{margin:0;font-size:.95rem;line-height:1.62;color:var(--muted);text-align:center;
+    max-width:20rem;margin-inline:auto}
+
+  /* limits */
+  .limits{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:.9rem;max-width:38rem}
+  .limits li{padding-left:1rem;border-left:2px solid var(--accent-line);font-size:.99rem}
+  .limits b{font-weight:600}
+  .limits small{display:block;color:var(--muted);font-size:.93rem;margin-top:.1rem;line-height:1.6}
+
+  .end{margin-top:3rem;border:1px solid var(--accent-line);border-radius:16px;background:var(--surface);
+    padding:1.6rem 1.4rem;box-shadow:var(--shadow);max-width:38rem}
+  .end .eyebrow{margin-bottom:.7rem}
+  .end a{display:inline-block;font-family:"Chakra Petch",sans-serif;font-weight:700;font-size:1.2rem;
+    color:var(--accent);text-decoration:none;border-bottom:2px solid var(--accent-line);
+    padding-bottom:.1rem;word-break:break-all}
+  .end a:hover{border-bottom-color:var(--accent)}
+  .end a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px}
+  .end p{margin:1rem 0 0;font-size:.97rem;color:var(--muted)}
+  .end p b{color:var(--ink);font-weight:600}
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <p class="eyebrow">จอยจัด · พาทัวร์ทีละหน้า</p>
+    <h1>ไวท์บอร์ดคิว ที่ไม่ต้องเขียน</h1>
+    <p class="lede">จัดคิวก๊วนแบด <strong>1–4 สนาม</strong> เล่นคู่ เข้า 2 ออก 2 · ตีจบกดปุ่มที่สนาม <strong>คิวต่อท้ายให้เอง</strong> ไม่ต้องมีใครมาลงชื่อ · ทุกภาพข้างล่างคือหน้าจอจริงจากแอป</p>
+  </header>
+
+  <div class="court"><span></span><span></span></div>
+
+  <h2>เริ่มจากศูนย์ ถึงเก็บเงิน</h2>
+  <p class="sub">ตั้งต้นครั้งเดียวก่อนตี ประมาณ 1–2 นาที จากนั้นระหว่างตีเหลือกดปุ่มเดียว</p>
+
+  <div class="step duo">
+    <div class="duoshots">
+      <figure>
+        <div class="shotbox"><img src="{{00-viewer-home}}" alt="หน้าแรกฝั่งคนทั่วไป มีแค่ชื่อก๊วน เวลาประจำ กติกา และข้อความรอเริ่มจัดก๊วน"></div>
+        <figcaption>เปิดลิงก์เฉยๆ · ดูอย่างเดียว</figcaption>
+      </figure>
+      <figure>
+        <div class="shotbox"><img src="{{01-home}}" alt="หน้าแรกโหมดแอดมิน มีปุ่มตั้งนัดวันนี้ ตัวเลือกจำนวนสนาม เลือกเลขคอร์ท และปุ่มถัดไป"></div>
+        <figcaption>หลังแตะโลโก้ 5 ครั้ง · โหมดจัดคิว</figcaption>
+      </figure>
+    </div>
+    <div class="steptext">
+      <span class="stepno">1</span>
+      <h3>แตะโลโก้ 5 ครั้ง เพื่อเข้าโหมดจัดคิว</h3>
+      <p>เปิดลิงก์เฉยๆ จะได้แค่จอดูสด (ภาพซ้าย) กดอะไรไม่ได้เลย — ปลอดภัยพอที่จะส่งให้ทั้งก๊วน</p>
+      <p>แตะที่คำว่า <em>“จอยจัด”</em> ด้านบน 5 ครั้งติดกัน ปุ่มจัดคิวจะโผล่ขึ้นมา (ภาพขวา) — <em>ตั้งนัดวันนี้</em>, เลือกจำนวนสนาม, เลือกเลขคอร์ทจริง, ปุ่มถัดไป</p>
+      <div class="tip"><b>ทำครั้งเดียวพอ</b> — เครื่องนั้นจำไว้ให้ตลอด เปิดครั้งหน้าก็เข้าโหมดจัดคิวเลย ตั้งไว้เฉพาะเครื่องที่ใช้จัด เครื่องคนอื่นปล่อยเป็นจอดูสดตามเดิม</div>
+    </div>
+  </div>
+
+  <div class="step wide flip">
+    <div class="wideshot"><img src="{{02-courts}}" alt="ส่วนเลือกสนาม แตะ 2 สนาม แล้วแตะเลือกคอร์ท 3 กับ 7 จากคอร์ททั้งหมด 10 คอร์ท"></div>
+    <div class="steptext">
+      <span class="stepno">2</span>
+      <h3>บอกว่าวันนี้ได้กี่สนาม คอร์ทเบอร์อะไร</h3>
+      <p>แตะเลือก <em>จำนวนสนาม</em> (1–4) แล้วแตะ <em>เลขคอร์ทจริง</em> ที่ได้มาวันนั้นจากทั้งหมด 10 คอร์ท — เลือกไม่ติดกันก็ได้ เช่นได้คอร์ท 3 กับ 7</p>
+      <p>เลขที่เลือกจะไปขึ้นบนหัวการ์ดสนามตอนเล่น คนจะได้เดินไปถูกคอร์ท</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="shotbox"><img src="{{03-pick}}" alt="หน้าเลือกผู้เล่น แตะชื่อจากรายชื่อที่จำไว้ มีเลขลำดับบนชื่อที่เลือกแล้ว"></div>
+    <div class="steptext">
+      <span class="stepno">3</span>
+      <h3>แตะชื่อคนที่มาวันนี้</h3>
+      <p>รายชื่อคนในก๊วนถูกจำไว้ให้ตั้งแต่ครั้งก่อน แตะเลือกได้เลย ไม่ต้องพิมพ์ใหม่ทุกอาทิตย์ มีคนใหม่ก็พิมพ์เพิ่มตรงนั้น ครั้งหน้าจะจำให้เอง</p>
+      <p><em>ตัวเลขบนชื่อ = ลำดับคิว</em> ใครมาก่อนแตะก่อน เขาก็ได้คิวก่อน</p>
+    </div>
+  </div>
+
+  <div class="step flip">
+    <div class="shotbox"><img src="{{04-arrange}}" alt="หน้าจัดคนลงสนาม มีปุ่มจัดให้อัตโนมัติ"></div>
+    <div class="steptext">
+      <span class="stepno">4</span>
+      <h3>จัดคนลงสนาม แล้วเริ่มได้</h3>
+      <p>แตะชื่อใส่สนามเองก็ได้ ถ้าขี้เกียจกด <em>จัดให้อัตโนมัติ</em> ทีเดียวจบ ครบ 4 คนแล้วมันเลื่อนไปสนามถัดไปให้เอง</p>
+      <p>คนที่เหลือกลายเป็นคิวรอโดยอัตโนมัติ ไม่ต้องจดที่ไหนอีก</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="shotbox"><img src="{{05-play}}" alt="หน้าจอหลักระหว่างเล่น แสดงคนในสนามแต่ละสนาม เวลาที่เล่นไป และคิวรอด้านล่าง"></div>
+    <div class="steptext">
+      <span class="stepno">5</span>
+      <h3>หน้านี้คือหน้าที่ใช้ตลอดทั้งเย็น</h3>
+      <p>เห็นครบในจอเดียว — ใครอยู่สนามไหน เกมที่เท่าไหร่ ตีไปแล้วกี่นาที และ <em>คิวรอเรียงเลข 1 2 3</em> อยู่ข้างล่าง</p>
+      <p>ปุ่มจบเกมของแต่ละสนามจะค่อยๆ เข้มขึ้นตามเวลาที่เล่นไป มองปราดเดียวรู้ว่าสนามไหนน่าจะใกล้จบแล้ว</p>
+    </div>
+  </div>
+
+  <div class="step flip">
+    <div class="shotbox"><img src="{{06-endgame}}" alt="หน้ายืนยันจบเกม แสดงว่าใครออก 2 คน และใครลงแทน 2 คน"></div>
+    <div class="steptext">
+      <span class="stepno">6</span>
+      <h3>ตีจบ กดปุ่มเดียว ที่เหลือคิดให้</h3>
+      <p>กดปุ่มที่การ์ดสนามนั้น ระบบ <em>เลือกคนที่ครบ 2 เกมติดออกให้แล้ว</em> และดึง 2 คนหัวคิวลงแทนให้เสร็จ</p>
+      <p>หน้านี้โชว์ชัดว่าใครออก ใครลง อยากแก้ก็แตะเปลี่ยนก่อนกดยืนยัน ถ้าถูกแล้วกดยืนยันจบ</p>
+      <div class="tip"><b>นี่คือทั้งหมดที่ต้องจำ</b> — ระหว่างตีทั้งเย็น ทำอยู่อย่างเดียวคือกดปุ่มนี้</div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="shotbox"><img src="{{07-callout}}" alt="ป้ายเรียกลงสนามเต็มจอ พื้นชมพูเข้ม ชื่อคนที่ต้องลงตัวขาวใหญ่เต็มจอ"></div>
+    <div class="steptext">
+      <span class="stepno">7</span>
+      <h3>เรียกคนด้วยป้ายเต็มจอ ไม่ต้องตะโกน</h3>
+      <p>พอกดยืนยัน ป้ายนี้เด้งขึ้น <em>ทุกเครื่องที่เปิดหน้านี้อยู่</em> พร้อมกัน ตัวใหญ่เต็มจอ มองเห็นจากอีกฝั่งสนามได้ และเครื่องที่กดจะอ่านชื่อออกเสียงให้ด้วย</p>
+      <p>บอกทั้งชื่อและเลขสนาม คนใหม่ที่ยังไม่รู้จักใครก็เดินไปสนามนั้นได้เลย</p>
+    </div>
+  </div>
+
+  <div class="step flip">
+    <div class="shotbox"><img src="{{10-summary}}" alt="หน้าสรุปเกม แสดงว่าแต่ละคนเล่นไปกี่เกม เรียงจากมากไปน้อย"></div>
+    <div class="steptext">
+      <span class="stepno">8</span>
+      <h3>จบก๊วน ดูก่อนว่าใครได้ตีกี่เกม</h3>
+      <p>เรียงจากมากไปน้อยให้เห็นเลยว่าใครตีรัว ใครนั่งเยอะ เอาไว้ปรับคิวอาทิตย์หน้าได้ · ถ้ายังอยากตีต่อ กดย้อนกลับไปเล่นต่อได้ ไม่ได้ปิดก๊วนทันที</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="shotbox"><img src="{{11-cost}}" alt="หน้าคิดเงิน กรอกค่าสนามและจำนวนลูก แล้วแสดงยอดคนละเท่าไหร่"></div>
+    <div class="steptext">
+      <span class="stepno">9</span>
+      <h3>คิดเงิน หารเท่ากัน จบใน 20 วินาที</h3>
+      <p>กรอกแค่ <em>ค่าสนามรวม</em> กับ <em>จำนวนลูกที่ใช้</em> — ค่าลูกคิดจากราคาต่อหลอดหาร 12 ให้เอง แล้วหารเท่ากันทุกคนที่มาวันนี้ ปัดขึ้นเป็นบาท</p>
+      <p>บอกด้วยว่าเก็บได้รวมเท่าไหร่ เหลือเศษเท่าไหร่ · ค่าสนามกับราคาหลอดถูกจำไว้ให้ครั้งหน้า</p>
+      <div class="tip"><b>อัป QR พร้อมเพย์ไว้ครั้งเดียว</b> แล้วปุ่มจ่ายเงินจะโผล่บนทุกเครื่อง ทุกคนกดดู QR กับยอดของตัวเองแล้วสแกนจ่ายได้เลย ไม่ต้องเดินไปถามว่าเท่าไหร่</div>
+    </div>
+  </div>
+
+  <div class="court"><span></span><span></span></div>
+
+  <h2>ลูกเล่นที่ได้ใช้จริงหน้างาน</h2>
+  <p class="sub">ไม่ต้องใช้ก็ได้ แต่วันไหนวุ่นๆ จะได้ใช้ทุกอัน</p>
+
+  <div class="extras">
+    <div class="extra">
+      <div class="shotbox"><img src="{{08-sub}}" alt="หน้าเปลี่ยนตัวกลางเกม เลือกสลับตำแหน่งหรือดึงคนจากคิวลงแทน"></div>
+      <h3>เปลี่ยนตัวกลางเกม</h3>
+      <p>แตะชื่อคนในสนามได้ตลอด จะสลับตำแหน่งกันเอง หรือดึงคนจากคิวลงแทนก็ได้ คนที่ออกไปรับคิวของคนที่ลง ไม่นับเป็นจบเกม</p>
+    </div>
+    <div class="extra">
+      <div class="shotbox"><img src="{{09-manage}}" alt="หน้ารายชื่อ เพิ่มคนมาสาย ปิดสวิตช์คนที่กลับบ้าน"></div>
+      <h3>คนมาสาย คนกลับก่อน</h3>
+      <p>เพิ่มชื่อคนมาสายได้กลางคัน · ปิดสวิตช์คนที่กลับบ้าน เขาออกจากสนามและคิวทันที แต่ยังนับหัวในการหารเงิน</p>
+    </div>
+    <div class="extra">
+      <div class="shotbox"><img src="{{12-viewer}}" alt="จอดูสด เห็นสนามและคิวเหมือนกัน แต่กดอะไรไม่ได้"></div>
+      <h3>จอดูสด บนมือถือทุกคน</h3>
+      <p>ส่งลิงก์เดียวกันให้ทั้งก๊วน เปิดแล้วเห็นคิวสดชุดเดียวกัน แต่กดแก้อะไรไม่ได้ คนนั่งไกลไม่ต้องเดินมาดูบ่อยๆ</p>
+    </div>
+  </div>
+
+  <div class="court"><span></span><span></span></div>
+
+  <h2>ข้อจำกัด</h2>
+  <p class="sub">บอกไว้ก่อน จะได้ไม่เซอร์ไพรส์หน้างาน</p>
+
+  <ul class="limits">
+    <li><b>ยังต้องมีคนกดจบเกม ถ้าไม่มีใครกด คิวไม่เดิน</b>
+      <small>ไม่จำเป็นต้องเป็นคนเดิมตลอด วางเครื่องไว้ที่เดิมใกล้สนาม ใครตีเสร็จเดินมากดเองได้เลย เหมือนเดินมาเขียนกระดาน</small></li>
+    <li><b>เน็ตหลุด เครื่องที่จัดคิวยังใช้ต่อได้ปกติ</b>
+      <small>แต่เครื่องที่เปิดดูสดจะค้างอยู่ที่ข้อมูลล่าสุดจนกว่าเน็ตจะกลับมา</small></li>
+    <li><b>เสียงอ่านชื่อออกเฉพาะเครื่องที่กด</b>
+      <small>เครื่องอื่นเห็นป้ายเต็มจออย่างเดียว และอาจช้ากว่าราว 5 วินาที</small></li>
+  </ul>
+
+  <div class="end">
+    <p class="eyebrow">ลองเปิดดูก่อนได้</p>
+    <a href="https://joyjad.vercel.app">joyjad.vercel.app</a>
+    <p>เปิดลิงก์เฉยๆ = <b>ดูอย่างเดียว</b> กดอะไรไม่ได้ ส่งต่อให้ทั้งก๊วนได้เลย<br>
+    จะจัดคิวจริงต้องเข้าโหมดจัดก่อน — <b>แตะที่คำว่า “จอยจัด” 5 ครั้ง</b> ตั้งครั้งเดียวที่เครื่องที่ใช้จัด<br>
+    ไม่ต้องติดตั้งแอป ไม่ต้องสมัครสมาชิก ไม่ต้องใช้ลำโพง</p>
+  </div>
+
+</div>
