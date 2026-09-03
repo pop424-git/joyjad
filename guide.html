@@ -1,3 +1,9 @@
+<!doctype html>
+<html lang="th">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#fffbfd">
+<meta name="description" content="จอยจัด — พาทัวร์ทีละหน้า: จัดคิวก๊วนแบด เข้า 2 ออก 2">
 <title>จอยจัด พาทัวร์ทีละหน้า</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -114,6 +120,55 @@
   .end a:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:3px}
   .end p{margin:1rem 0 0;font-size:.97rem;color:var(--muted)}
   .end p b{color:var(--ink);font-weight:600}
+
+  /* ==========================================================
+     มือถือ — ขยายที่รากเป็นหลัก (ทั้งหน้าใช้ rem ซึ่งอิง html ไม่ใช่ body)
+     แล้วค่อยเก็บรายละเอียดที่ยังเล็กไปเป็นรายชิ้น
+     ========================================================== */
+  @media (max-width:600px){
+    html{font-size:17.5px}
+    body{font-size:1rem;line-height:1.68}
+    .wrap{padding:0 1.15rem 3.5rem}
+
+    .hero{padding:2.3rem 0 .4rem}
+    .eyebrow{font-size:.84rem;margin-bottom:.8rem}
+    h1{line-height:1.18;margin-bottom:.9rem}
+    .lede{font-size:1.06rem}
+
+    .court{margin:2.1rem 0 1.8rem}
+    h2{font-size:1.42rem}
+    .sub{font-size:1rem;margin-bottom:1.5rem}
+
+    /* ภาพหน้าจอกว้างเกือบเต็มคอลัมน์ — จะได้เห็นรายละเอียดในภาพ ไม่ใช่แค่รู้ว่ามีภาพ */
+    .step{padding:1.8rem 0;gap:1.15rem}
+    .shotbox{max-width:19rem;border-radius:20px}
+    .duoshots{max-width:none;gap:.75rem}
+    .duoshots figcaption{font-size:.88rem;margin-top:.5rem}
+    .wideshot{max-width:100%}
+
+    .stepno{width:2rem;height:2rem;font-size:.95rem;margin-bottom:.6rem}
+    .steptext h3{font-size:1.24rem}
+    .steptext p{font-size:1.02rem;margin-bottom:.65rem}
+    .tip{font-size:1rem;padding:.8rem .95rem}
+
+    .extras{gap:2.1rem}
+    .extra .shotbox{max-width:16rem}
+    .extra h3{font-size:1.12rem}
+    .extra p{font-size:1rem}
+
+    .limits{gap:1rem}
+    .limits li{font-size:1.04rem}
+    .limits small{font-size:.99rem}
+
+    .end{margin-top:2.4rem;padding:1.4rem 1.2rem}
+    .end a{font-size:1.15rem}
+    .end p{font-size:1rem}
+  }
+
+  /* จอแคบมาก — ภาพเทียบซ้าย/ขวาในขั้น 1 ซ้อนเป็นบนล่าง จะได้ไม่เล็กจนดูไม่ออก */
+  @media (max-width:400px){
+    .duoshots{grid-template-columns:1fr;gap:1.1rem;max-width:19rem}
+  }
 </style>
 
 <div class="wrap">
