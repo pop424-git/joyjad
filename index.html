@@ -1994,7 +1994,10 @@ function applySnapshot(d){
 }
 
 /* ================= step 1 : courts ================= */
-function courtLabel(pos){ return String(selectedCourts[pos-1] || pos); }
+/* ลำดับสนามตอนเล่นจริง: เลขมากขึ้นก่อน (จอง 1 กับ 2 -> สนาม 2 เป็นช่องแรก)
+   selectedCourts ยังเก็บตามลำดับที่แตะไว้เหมือนเดิม เพื่อให้ปุ่มเลือกสนามปลดตัวที่เลือกไว้นานสุดได้ถูก */
+function courtOrder(){ return selectedCourts.slice().sort(function(a,b){ return b-a; }); }
+function courtLabel(pos){ return String(courtOrder()[pos-1] || pos); }
 function reconcileSelectedCourts(){
   if(selectedCourts.length > courtCount) selectedCourts = selectedCourts.slice(0, courtCount);
   while(selectedCourts.length < courtCount){
@@ -2158,7 +2161,7 @@ function renderArrange(){
 
   var seated = arrangeSeated(), needAll = courts.length * SLOTS;
   document.getElementById("arrangeSub").textContent =
-    act ? ("กำลังเลือกคนลงสนาม " + act.id + " · ใส่แล้ว " + seated + "/" + needAll + " คน")
+    act ? ("กำลังเลือกคนลงสนาม " + act.no + " · ใส่แล้ว " + seated + "/" + needAll + " คน")
         : ("ครบทุกสนามแล้ว (" + seated + " คนในสนาม, " + pool.length + " คนรอคิว)");
   document.getElementById("btnStart").disabled = !!act;
   orientCourts();
