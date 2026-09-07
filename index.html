@@ -298,6 +298,18 @@
   .court-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; flex:0 0 auto; }
   .court-title{ font-weight:800; font-size:var(--fs-sm); }
   .court-meta{ font-size:var(--fs-xs); color:var(--muted); margin-left:auto; white-space:nowrap; }
+  /* ย้ายลำดับสนาม — อยู่บนหัวการ์ด ขนาดเท่าปุ่มเลื่อนคิว กดด้วยนิ้วโป้งได้ */
+  .court-move{ display:flex; gap:3px; flex:0 0 auto; }
+  .court-move button{
+    background:#fff; border:1px solid var(--border); border-radius:7px; color:var(--accent);
+    width:clamp(24px,5.5vw,32px); height:clamp(24px,5.5vw,30px); font-size:var(--fs-xs); line-height:1;
+    cursor:pointer; padding:0; display:flex; align-items:center; justify-content:center; font-weight:800;
+  }
+  .court-move button:active{ background:var(--accent-soft); }
+  .court-move button:disabled{ opacity:.25; }
+  /* สนามเยอะ ช่องแคบ: หัวการ์ดเหลือที่น้อย ย่อปุ่มลงตาม */
+  .courts-grid[data-n="5"] .court-move button,
+  .courts-grid[data-n="6"] .court-move button{ width:22px; height:22px; }
   .court-timer{ font-size:var(--fs-xs); color:var(--accent); font-weight:800; white-space:nowrap; font-variant-numeric:tabular-nums; }
 
   /* the court itself */
@@ -482,6 +494,7 @@
   body.viewer .header-btns .icon-btn{ display:none; }
   body.viewer .court-foot{ display:none; }
   body.viewer .qmove{ display:none; }
+  body.viewer .court-move{ display:none; }
   body.viewer .q-hint{ display:none; }
   body.viewer .pslot{ cursor:default; }
   body.viewer .pslot:active .card{ transform:none; }
@@ -1017,7 +1030,7 @@
     <div class="arrange-scroll">
       <div class="courts-grid" id="arrangeCourts"></div>
       <div class="queue-panel">
-        <div class="q-head"><div class="q-title">ยังไม่ได้ลง</div><div class="q-hint">แตะชื่อเพื่อใส่ลงสนามที่กำลังเลือก · แตะชื่อในสนามเพื่อเอาออก</div></div>
+        <div class="q-head"><div class="q-title">ยังไม่ได้ลง</div><div class="q-hint">แตะชื่อเพื่อใส่ลงสนามที่กำลังเลือก · แตะชื่อในสนามเพื่อเอาออก · ◀ ▶ บนหัวสนาม = ย้ายลำดับสนาม</div></div>
         <div class="q-list" id="arrangePool"></div>
       </div>
     </div>
@@ -1245,6 +1258,7 @@ var courtCount = 2;
 var roster = [];                     // [{name, last}]  จำข้ามก๊วน
 var prices = { court:0, tube:0 };    // จำราคาไว้ครั้งหน้า
 var selectedCourts = [1,2];          // เลขสนามจริงที่เลือกใช้ (ตามลำดับที่แตะ) จำข้ามก๊วน — ลำดับตอนเล่นดู courtOrder()
+var manualOrder = null;              // ลำดับสนามที่ผู้จัดย้ายเองในขั้นจัดคน (null = ใช้ค่าตั้งต้น มาก->น้อย) จำข้ามก๊วน
 var picked = [];                     // ชื่อที่เลือกวันนี้ (ตามลำดับที่แตะ)
 var players = [];                    // {id,name,attending,status,courtId,games,consec,order}
 var courts  = [];                    // {id, slots:[4], gameNo}
@@ -1606,11 +1620,17 @@ function loadRoster(){
       selectedCourts = d.selectedCourts.map(function(v){ return parseInt(v,10)||0; })
         .filter(function(n){ return n>=1 && n<=TOTAL_COURTS && !seen[n] && (seen[n]=true); });
     }
+    if(d && Array.isArray(d.manualOrder)){
+      var seenM = {};
+      manualOrder = d.manualOrder.map(function(v){ return parseInt(v,10)||0; })
+        .filter(function(n){ return n>=1 && n<=TOTAL_COURTS && !seenM[n] && (seenM[n]=true); });
+      if(!manualOrder.length) manualOrder = null;
+    }
   }catch(e){}
 }
 function saveRoster(){
   if(!storageOK) return;
-  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices, selectedCourts:selectedCourts })); }catch(e){}
+  try{ localStorage.setItem(RKEY, JSON.stringify({ names:roster, prices:prices, selectedCourts:selectedCourts, manualOrder:manualOrder })); }catch(e){}
 }
 function rosterSorted(){
   return roster.slice().sort(function(a,b){
@@ -1994,10 +2014,17 @@ function applySnapshot(d){
 }
 
 /* ================= step 1 : courts ================= */
-/* ลำดับสนามทั้งแอป: เลขมากมาก่อน (จอง 1 กับ 2 -> สนาม 2 เป็นช่องแรก)
+/* ลำดับสนามทั้งแอป: ค่าตั้งต้นเรียงเลขมากมาก่อน (จอง 1 กับ 2 -> สนาม 2 เป็นช่องแรก)
+   ผู้จัดกดปุ่มย้ายเองในขั้นจัดคนได้ ลำดับที่ย้ายเก็บไว้ที่ manualOrder แล้วจำข้ามก๊วน
    selectedCourts ยังเก็บตามลำดับที่แตะไว้เหมือนเดิม เพื่อให้ปุ่มเลือกสนามปลดตัวที่เลือกไว้นานสุดได้ถูก */
 function courtsDesc(list){ return (list || []).slice().sort(function(a,b){ return b-a; }); }
-function courtOrder(){ return courtsDesc(selectedCourts); }
+function courtOrder(){
+  var base = courtsDesc(selectedCourts);
+  if(!manualOrder) return base;
+  var out = manualOrder.filter(function(n){ return selectedCourts.indexOf(n) >= 0; });   // สนามที่ปลดออกไปแล้ว ตัดทิ้ง
+  base.forEach(function(n){ if(out.indexOf(n) < 0) out.push(n); });                      // สนามที่เพิ่งเลือกเพิ่ม ต่อท้าย
+  return out;
+}
 function courtLabel(pos){ return String(courtOrder()[pos-1] || pos); }
 function reconcileSelectedCourts(){
   if(selectedCourts.length > courtCount) selectedCourts = selectedCourts.slice(0, courtCount);
@@ -2139,15 +2166,33 @@ function arrangeAuto(){
   }
   renderArrange();
 }
+/* ย้ายลำดับสนามในขั้นจัดคน — สลับทั้งการ์ด คนที่ใส่ไว้แล้วย้ายตามเลขสนามไปด้วย
+   ลำดับใหม่จำไว้ใช้ก๊วนหน้าด้วย จนกว่าจะย้ายใหม่อีกครั้ง */
+function moveCourt(id, dir){
+  var i = -1, j;
+  for(var k=0;k<courts.length;k++){ if(courts[k].id === id){ i = k; break; } }
+  if(i < 0) return;
+  j = i + dir;
+  if(j < 0 || j >= courts.length) return;
+  var tmp = courts[i]; courts[i] = courts[j]; courts[j] = tmp;
+  manualOrder = courts.map(function(c){ return parseInt(c.no, 10); });
+  saveRoster();
+  renderArrange();
+}
 function renderArrange(){
   var act = activeCourt();
   var grid = document.getElementById("arrangeCourts");
   grid.setAttribute("data-n", courts.length);
-  grid.innerHTML = courts.map(function(c){
+  grid.innerHTML = courts.map(function(c, i){
     var n = onCourtPlayers(c).length;
     return '<div class="court'+(act && act.id===c.id ? " active" : "")+'">'
       + '<div class="court-head"><div class="court-title">สนาม '+c.no+'</div>'
-      +   '<div class="court-meta">'+n+'/'+SLOTS+(act && act.id===c.id ? ' · กำลังเลือก' : '')+'</div></div>'
+      +   '<div class="court-meta">'+n+'/'+SLOTS+(act && act.id===c.id ? ' · กำลังเลือก' : '')+'</div>'
+      +   (courts.length > 1 ? '<span class="court-move">'
+      +     '<button data-cmv="'+c.id+':-1"'+(i===0?" disabled":"")+' title="ย้ายขึ้นก่อน">◀</button>'
+      +     '<button data-cmv="'+c.id+':1"'+(i===courts.length-1?" disabled":"")+' title="ย้ายไปหลัง">▶</button>'
+      +   '</span>' : "")
+      + '</div>'
       + courtBodyHTML(c, true)
       + '</div>';
   }).join("");
@@ -2892,7 +2937,7 @@ document.addEventListener("click", function(e){
 document.addEventListener("click", function(e){
   if(!isAdmin) return;                       // โหมดดูสด: อ่านอย่างเดียว
   var t = e.target.closest(
-    "[data-cc],[data-pk],[data-rx],[data-ap],[data-ac],[data-court],[data-end],[data-move],"
+    "[data-cc],[data-pk],[data-rx],[data-ap],[data-ac],[data-court],[data-end],[data-move],[data-cmv],"
     + "[data-out],[data-in],[data-pick],[data-confirm],[data-close],[data-toggle],[data-del],[data-join],"
     + "[data-cs],[data-ps],[data-pp]"
   );
@@ -2921,6 +2966,10 @@ document.addEventListener("click", function(e){
   else if(t.hasAttribute("data-move")){
     var mv = t.getAttribute("data-move").split(":");
     moveQueue(parseInt(mv[0],10), parseInt(mv[1],10));
+  }
+  else if(t.hasAttribute("data-cmv")){
+    var cm = t.getAttribute("data-cmv").split(":");
+    moveCourt(parseInt(cm[0],10), parseInt(cm[1],10));
   }
   else if(t.hasAttribute("data-out"))  toggleOut(+t.getAttribute("data-out"));
   else if(t.hasAttribute("data-in"))   toggleIn(+t.getAttribute("data-in"));
