@@ -295,11 +295,11 @@
     border:1px solid var(--border); box-shadow:var(--shadow);
   }
   .court.active{ border-color:var(--accent); box-shadow:0 0 0 2px rgba(232,40,107,.2); }
-  .court-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; flex:0 0 auto; }
-  .court-title{ font-weight:800; font-size:var(--fs-sm); }
+  .court-head{ display:flex; align-items:center; gap:7px; margin-bottom:5px; flex:0 0 auto; flex-wrap:wrap; }
+  .court-title{ font-weight:800; font-size:var(--fs-sm); white-space:nowrap; }
   .court-meta{ font-size:var(--fs-xs); color:var(--muted); margin-left:auto; white-space:nowrap; }
   /* ย้ายลำดับสนาม — อยู่บนหัวการ์ด ขนาดเท่าปุ่มเลื่อนคิว กดด้วยนิ้วโป้งได้ */
-  .court-move{ display:flex; gap:3px; flex:0 0 auto; }
+  .court-move{ display:flex; gap:3px; flex:0 0 auto; margin-left:auto; }
   .court-move button{
     background:#fff; border:1px solid var(--border); border-radius:7px; color:var(--accent);
     width:clamp(24px,5.5vw,32px); height:clamp(24px,5.5vw,30px); font-size:var(--fs-xs); line-height:1;
@@ -2166,7 +2166,8 @@ function arrangeAuto(){
   }
   renderArrange();
 }
-/* ย้ายลำดับสนามในขั้นจัดคน — สลับทั้งการ์ด คนที่ใส่ไว้แล้วย้ายตามเลขสนามไปด้วย
+/* ย้ายลำดับสนาม — ใช้ได้ทั้งขั้นจัดคนและระหว่างเล่น สลับทั้งการ์ด
+   คนในสนาม เวลาที่เดินอยู่ และเลขเกม ย้ายตามเลขสนามไปทั้งชุด
    ลำดับใหม่จำไว้ใช้ก๊วนหน้าด้วย จนกว่าจะย้ายใหม่อีกครั้ง */
 function moveCourt(id, dir){
   var i = -1, j;
@@ -2177,7 +2178,8 @@ function moveCourt(id, dir){
   var tmp = courts[i]; courts[i] = courts[j]; courts[j] = tmp;
   manualOrder = courts.map(function(c){ return parseInt(c.no, 10); });
   saveRoster();
-  renderArrange();
+  if(phase === "play"){ save(); renderPlay(); }    // ระหว่างเล่น: ดันขึ้นเซิร์ฟเวอร์ให้จอดูสดเรียงตาม
+  else renderArrange();
 }
 function renderArrange(){
   var act = activeCourt();
@@ -2281,12 +2283,17 @@ function renderPlay(){
   var grid = document.getElementById("playCourts");
   var heat = courtHeat();
   grid.setAttribute("data-n", courts.length);
-  grid.innerHTML = courts.map(function(c){
+  grid.innerHTML = courts.map(function(c, ci){
     var n = onCourtPlayers(c).length;
     return '<div class="court">'
       + '<div class="court-head"><div class="court-title">สนาม '+c.no+'</div>'
       +   '<div class="court-meta">'+(c.gameNo===0 ? "เกมแรก" : "เกมที่ "+(c.gameNo+1))+'</div>'
-      +   '<div class="court-timer" data-timer="'+c.id+'">'+fmtTimer(c)+'</div></div>'
+      +   '<div class="court-timer" data-timer="'+c.id+'">'+fmtTimer(c)+'</div>'
+      +   (courts.length > 1 ? '<span class="court-move">'
+      +     '<button data-cmv="'+c.id+':-1"'+(ci===0?" disabled":"")+' title="ย้ายขึ้นก่อน">◀</button>'
+      +     '<button data-cmv="'+c.id+':1"'+(ci===courts.length-1?" disabled":"")+' title="ย้ายไปหลัง">▶</button>'
+      +   '</span>' : "")
+      + '</div>'
       + courtBodyHTML(c, false)
       + '<div class="court-foot"><button class="btn-end'+(n?" heat-"+heat[c.id]:" wait")+'" data-end="'+c.id+'"'+(n?"":" disabled")+'>'
       +   (n ? "จบเกม · เปลี่ยนตัว" : "ยังไม่มีคนในสนาม") + '</button></div>'
