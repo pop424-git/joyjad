@@ -446,9 +446,13 @@
   #scPlay .qrow.next .qname{ color:#fff; }
   #scPlay .qrow.next .qwait{ color:#ffd7e6; }
   #scPlay .qrow.next .qn{ color:#fff; }
+  /* 2 คนถัดไปตัวใหญ่สุด ที่เหลือเล็กลง — กวาดตารู้ว่าใครลงต่อ โดยไม่ต้องอ่านทั้งคิว
+     คูณกับขนาดฐานของแต่ละ layout จึงได้สัดส่วนเดียวกันทั้งมือถือและ iPad แนวนอน */
+  #scPlay .qrow{ --qname-scale:.86; }
+  #scPlay .qrow.next{ --qname-scale:1.2; }
   /* ชื่อยาวให้ขึ้นบรรทัดที่ 2 แทนตัดหาง — บนมือถือชื่อโดนบีบง่าย */
   .qname{
-    font-weight:800; font-size:var(--fs-sm); flex:1 1 auto; min-width:0;
+    font-weight:800; font-size:calc(var(--fs-sm) * var(--qname-scale, 1)); flex:1 1 auto; min-width:0;
     overflow:hidden; overflow-wrap:anywhere; line-height:1.25;
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
   }
@@ -778,6 +782,10 @@
   #scPlay header h1{ font-size:clamp(23px, 1.5vw + 1.2vh + 8px, 40px); letter-spacing:-.5px; }
   #scPlay header h1 .r{ font-size:.8em; }
   #scPlay .savechip{ font-size:var(--fs-sm); }
+  /* ปุ่มบนหัวจอตอนเล่น: กดด้วยนิ้วโป้งข้างสนาม เลยให้ใหญ่กว่าปุ่มที่อื่น */
+  #scPlay .header-btns .icon-btn{
+    font-size:var(--fs-sm); padding:clamp(11px,1.5vh,16px) clamp(13px,1.6vw,22px); border-radius:12px;
+  }
   #scPlay #saveText{ font-weight:800; font-variant-numeric:tabular-nums; }
   .court-timer{ font-size:var(--fs-sm); }
 
@@ -790,10 +798,10 @@
     #scPlay header{ flex-wrap:nowrap; gap:7px; }
     #scPlay header h1{ font-size:var(--fs-md); flex:0 0 auto; }
     #scPlay header h1 .strike{ display:none; }
-    #scPlay header{ padding:8px 10px; }
-    #scPlay header h1{ font-size:20px; }
+    #scPlay header{ padding:11px 11px; }
+    #scPlay header h1{ font-size:22px; }
     .header-btns{ gap:5px; flex:0 0 auto; }
-    .header-btns .icon-btn{ padding:8px 9px; }
+    .header-btns .icon-btn{ padding:12px 11px; }
 
     /* สนามได้พื้นที่มากสุด คิวรออยู่ล่างแบบพอดีตัว */
     #playCourts{ min-height:0; }
@@ -813,7 +821,7 @@
     .q-list{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
     .qrow{ flex-wrap:nowrap; justify-content:flex-start; gap:6px; padding:7px 7px 7px 9px; }
     .qrow .qn{ position:static; min-width:1.4em; font-size:var(--fs-sm); }
-    .qrow .qname{ flex:1 1 auto; text-align:left; padding:0; font-size:var(--fs-md); }
+    .qrow .qname{ flex:1 1 auto; text-align:left; padding:0; font-size:calc(var(--fs-md) * var(--qname-scale, 1)); }
     .qrow .qmove{ flex:0 0 auto; justify-content:flex-end; }
     .qmove button{ width:31px; height:36px; max-width:none; }
 
@@ -868,7 +876,11 @@
       display:flex; align-items:center; justify-content:center; background:#fff;
       border:1px solid var(--border); color:var(--muted);
     }
-    #scPlay .qname{ font-size:var(--qname-fs, clamp(24px, 1.3vw + 1.5vh + 8px, 42px)); line-height:1.15; }
+    #scPlay .qname{ font-size:calc(var(--qname-fs, clamp(24px, 1.3vw + 1.5vh + 8px, 42px)) * var(--qname-scale, 1)); line-height:1.15; }
+    /* จอนี้ fitQueue คิดขนาดชื่อให้พอดีความสูงแถวอยู่แล้ว ขยายต่อจะล้นความกว้างจนชื่อตัดบรรทัด
+       เลยให้ 2 คนถัดไปคงขนาดที่คำนวณไว้ แล้วหดที่เหลือแทน */
+    #scPlay .qrow{ --qname-scale:.72; }
+    #scPlay .qrow.next{ --qname-scale:1; }
     #scPlay .qwait{ font-size:var(--qwait-fs, var(--fs-lg)); }
     #scPlay .qmove button{ width:40px; height:42px; font-size:var(--fs-sm); }
     /* จอนี้ .qn เป็นวงกลมพื้นขาว — กลับสีเลขให้อ่านออกบนแถบสีเต็ม */
