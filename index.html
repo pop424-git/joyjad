@@ -810,7 +810,24 @@
 
     /* สนามได้พื้นที่มากสุด คิวรออยู่ล่างแบบพอดีตัว */
     #playCourts{ min-height:0; }
-    #scPlay .queue-panel{ max-height:min(34dvh,320px); }
+    /* คิวรอเตี้ยลง — ความสูงที่คืนมาไปเข้าการ์ดสนาม ชื่อคนจะได้ไม่โดนตัด */
+    #scPlay .queue-panel{ max-height:min(27dvh,250px); gap:5px; padding:7px; }
+    /* ปุ่มจบเกมบนมือถือ: ความสูงปุ่มไปแย่งที่ของชื่อคนในสนาม เลยบีบลง
+       ปุ่มยังกว้างเต็มการ์ดและสูงราว 45-50px — กดด้วยนิ้วโป้งไม่พลาด */
+    .court-foot{ margin-top:4px; }
+    .btn-end{ padding:clamp(9px,1.4vh,15px); font-size:var(--fs-md); border-radius:9px; }
+    /* 3-4 สนามบนมือถือ: การ์ดสนามเตี้ยลงครึ่งหนึ่ง ปุ่มต้องเล็กลงตาม ไม่งั้นกินที่ชื่อ */
+    .courts-grid[data-n="3"] .btn-end,
+    .courts-grid[data-n="4"] .btn-end{ padding:clamp(7px,1vh,11px); font-size:var(--fs-sm); }
+    /* จอเล็ก + สนามเยอะ = ช่องผู้เล่นเตี้ยจนการ์ดล้นกรอบ ตัวอักษรโดนตัดครึ่งตัว
+       บีบขอบการ์ดและให้ชื่ออยู่บรรทัดเดียว จะได้เห็นตัวอักษรเต็มตัว */
+    .courts-grid[data-n="3"] .pslot,
+    .courts-grid[data-n="4"] .pslot{ padding:1px; }
+    .courts-grid[data-n="3"] .pslot .card,
+    .courts-grid[data-n="4"] .pslot .card{ padding:2px 5px; border-width:2px; line-height:1.25; }
+    /* 1-2 สนาม: การ์ดแคบเพราะรักษาสัดส่วนสนาม แต่สูงเหลือเฟือ — ชื่อยาวพับได้ถึง 3 บรรทัด */
+    .courts-grid[data-n="1"] .pslot .card,
+    .courts-grid[data-n="2"] .pslot .card{ -webkit-line-clamp:3; }
     /* สนามน้อย = รักสัดส่วนสนามจริง (13.4 × 6.1 เมตร) ไม่ยืดเต็มช่อง
        1 สนาม — วางสนามแนวตั้งเต็มจอ · 2 สนาม — นอนสนามตามขวางจัดกลางแนวตั้ง */
     .courts-grid[data-n="1"] .court-body{
@@ -824,11 +841,14 @@
 
     /* คิวรอบรรทัดละ 2 คน — ชื่อกับปุ่มเลื่อนคิวอยู่บรรทัดเดียวกัน */
     .q-list{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; }
-    .qrow{ flex-wrap:nowrap; justify-content:flex-start; gap:6px; padding:7px 7px 7px 9px; }
+    .qrow{ flex-wrap:nowrap; justify-content:flex-start; gap:6px; padding:5px 6px 5px 8px; }
     .qrow .qn{ position:static; min-width:1.4em; font-size:var(--fs-sm); }
     .qrow .qname{ flex:1 1 auto; text-align:left; padding:0; font-size:calc(var(--fs-md) * var(--qname-scale, 1)); }
+    /* ช่องคิวกว้างครึ่งจอ เหลือที่ให้ชื่อแค่ ~50px — 2 คนถัดไปตัวโตจนตัดหาง
+       ให้กินเต็มบรรทัดไปเลย ชื่อยาวแค่ไหนก็อ่านครบ และสูงพอๆ กับตอนชื่อพับ 2 บรรทัด */
+    #scPlay .qrow.next{ grid-column:1/-1; }
     .qrow .qmove{ flex:0 0 auto; justify-content:flex-end; }
-    .qmove button{ width:31px; height:36px; max-width:none; }
+    .qmove button{ width:31px; height:32px; max-width:none; }
 
     /* ขั้นจัดคน: สนามสูงพอเห็นชื่อ แล้วเลื่อนดูคิวได้ */
     .arrange-scroll .courts-grid{ min-height:clamp(260px,42dvh,420px); }
@@ -849,6 +869,13 @@
     .plan-names{ gap:4px; }
     .plan-names span{ padding:2px 9px; }
     .plan-people{ padding-top:6px; }
+  }
+
+  /* จอเตี้ย + สนามเยอะ: ช่องผู้เล่นสูงไม่ถึง 2 บรรทัด ชื่อจะโดนตัดครึ่งตัวอักษร
+     ให้เหลือบรรทัดเดียว อ่านได้เต็มตัวแล้วค่อยตัดหางถ้ายาวจริง */
+  @media (orientation:portrait) and (max-width:759px) and (max-height:700px){
+    .courts-grid[data-n="3"] .pslot .card,
+    .courts-grid[data-n="4"] .pslot .card{ -webkit-line-clamp:1; }
   }
 
   /* ==========================================================
