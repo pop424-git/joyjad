@@ -60,15 +60,15 @@
     padding:2rem 0;border-top:1px solid var(--line)}
   .step:first-of-type{border-top:0;padding-top:.4rem}
   @media (min-width:760px){
-    .step{grid-template-columns:16.5rem 1fr;gap:2.6rem;padding:2.6rem 0}
+    .step{grid-template-columns:22rem 1fr;gap:2.6rem;padding:2.6rem 0}
     .step.flip > *:first-child{order:2}
     .step.flip .steptext{order:1}
   }
   .shotbox{background:var(--frame);border-radius:22px;padding:8px;box-shadow:var(--shadow);
-    max-width:16.5rem;width:100%;margin:0 auto}
+    max-width:22rem;width:100%;margin:0 auto}
   .shotbox img{width:100%;height:auto;border-radius:15px}
   /* step 1 shows two states side by side: plain viewer vs admin */
-  .duoshots{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;max-width:26rem;width:100%;margin:0 auto}
+  .duoshots{display:grid;grid-template-columns:1fr 1fr;gap:.9rem;max-width:32rem;width:100%;margin:0 auto}
   .duoshots figure{margin:0;min-width:0}
   .duoshots .shotbox{max-width:none;border-radius:16px;padding:6px}
   .duoshots .shotbox img{border-radius:11px}
@@ -76,19 +76,19 @@
     color:var(--muted)}
   .duoshots figure:last-child figcaption{color:var(--accent);font-weight:600}
   @media (min-width:760px){
-    .step.duo{grid-template-columns:26rem 1fr}
-    .step.wide{grid-template-columns:24rem 1fr}
+    .step.duo{grid-template-columns:32rem 1fr}
+    .step.wide{grid-template-columns:30rem 1fr}
   }
 
   .wideshot{background:var(--frame);border-radius:16px;padding:7px;box-shadow:var(--shadow);
-    width:100%;max-width:24rem;margin:0 auto}
+    width:100%;max-width:30rem;margin:0 auto}
   .wideshot img{width:100%;height:auto;border-radius:10px}
 
   .steptext{min-width:0}
   .stepno{display:inline-flex;align-items:center;justify-content:center;
     width:1.85rem;height:1.85rem;border-radius:50%;background:var(--accent);color:var(--accent-ink);
     font-weight:700;font-size:.9rem;font-variant-numeric:tabular-nums;margin-bottom:.7rem}
-  .steptext h3{font-size:1.22rem;font-weight:700;margin:0 0 .45rem;line-height:1.35;text-wrap:balance}
+  .steptext h3{font-size:1.45rem;font-weight:700;margin:0;line-height:1.3;text-wrap:balance}
   .steptext p{margin:0 0 .7rem;font-size:1rem}
   .steptext p:last-child{margin-bottom:0}
   .steptext em{font-style:normal;color:var(--accent);font-weight:600}
@@ -141,18 +141,18 @@
 
     /* ภาพหน้าจอกว้างเกือบเต็มคอลัมน์ — จะได้เห็นรายละเอียดในภาพ ไม่ใช่แค่รู้ว่ามีภาพ */
     .step{padding:1.8rem 0;gap:1.15rem}
-    .shotbox{max-width:19rem;border-radius:20px}
+    .shotbox{max-width:none;border-radius:20px}
     .duoshots{max-width:none;gap:.75rem}
     .duoshots figcaption{font-size:.88rem;margin-top:.5rem}
     .wideshot{max-width:100%}
 
     .stepno{width:2rem;height:2rem;font-size:.95rem;margin-bottom:.6rem}
-    .steptext h3{font-size:1.24rem}
+    .steptext h3{font-size:1.36rem}
     .steptext p{font-size:1.02rem;margin-bottom:.65rem}
     .tip{font-size:1rem;padding:.8rem .95rem}
 
     .extras{gap:2.1rem}
-    .extra .shotbox{max-width:16rem}
+    .extra .shotbox{max-width:none}
     .extra h3{font-size:1.12rem}
     .extra p{font-size:1rem}
 
@@ -165,24 +165,17 @@
     .end p{font-size:1rem}
   }
 
-  /* จอแคบมาก — ภาพเทียบซ้าย/ขวาในขั้น 1 ซ้อนเป็นบนล่าง จะได้ไม่เล็กจนดูไม่ออก */
-  @media (max-width:400px){
-    .duoshots{grid-template-columns:1fr;gap:1.1rem;max-width:19rem}
+  /* มือถือ — ภาพเทียบซ้าย/ขวาในขั้น 1 ซ้อนเป็นบนล่าง ครึ่งคอลัมน์เล็กเกินกว่าจะดูออก */
+  @media (max-width:600px){
+    .duoshots{grid-template-columns:1fr;gap:1.1rem;max-width:none}
   }
 </style>
 
 <div class="wrap">
 
   <header class="hero">
-    <p class="eyebrow">จอยจัด · พาทัวร์ทีละหน้า</p>
-    <h1>ไวท์บอร์ดคิว ที่ไม่ต้องเขียน</h1>
-    <p class="lede">จัดคิวก๊วนแบด <strong>1–4 สนาม</strong> · ตีจบ <strong>กดปุ่มเดียว</strong> คิวต่อท้ายให้เอง · ทุกภาพข้างล่างคือหน้าจอจริง</p>
+    <h1>จอยจัด · พาทัวร์ทีละหน้า</h1>
   </header>
-
-  <div class="court"><span></span><span></span></div>
-
-  <h2>เริ่มจากศูนย์ ถึงเก็บเงิน</h2>
-  <p class="sub">ตั้งต้น 1–2 นาที จากนั้นเหลือกดปุ่มเดียว</p>
 
   <div class="step duo">
     <div class="duoshots">
@@ -198,9 +191,6 @@
     <div class="steptext">
       <span class="stepno">1</span>
       <h3>แตะโลโก้ 5 ครั้ง เข้าโหมดจัดคิว</h3>
-      <p>เปิดลิงก์เฉยๆ = <em>ดูอย่างเดียว</em> กดอะไรไม่ได้ (ภาพซ้าย)</p>
-      <p>แตะคำว่า <em>“จอยจัด”</em> 5 ครั้งติดกัน ปุ่มจัดคิวโผล่ (ภาพขวา)</p>
-      <div class="tip"><b>ทำครั้งเดียวพอ</b> เครื่องนั้นจำไว้ตลอด · ตั้งเฉพาะเครื่องที่ใช้จัด</div>
     </div>
   </div>
 
@@ -208,9 +198,7 @@
     <div class="wideshot"><img src="{{02-courts}}" alt="ส่วนเลือกสนาม แตะ 2 สนาม แล้วแตะเลือกคอร์ท 3 กับ 7 จากคอร์ททั้งหมด 10 คอร์ท"></div>
     <div class="steptext">
       <span class="stepno">2</span>
-      <h3>วันนี้ได้กี่สนาม คอร์ทเบอร์อะไร</h3>
-      <p>เลือก <em>จำนวนสนาม</em> แล้วแตะ <em>เลขคอร์ทจริง</em> · ไม่ติดกันก็ได้</p>
-      <p>เลขไปขึ้นบนหัวการ์ดสนาม คนเดินไปถูกคอร์ท</p>
+      <h3>เลือกจำนวนสนาม แล้วเลือกเลขคอร์ท</h3>
     </div>
   </div>
 
@@ -219,8 +207,6 @@
     <div class="steptext">
       <span class="stepno">3</span>
       <h3>แตะชื่อคนที่มาวันนี้</h3>
-      <p>รายชื่อจำไว้จากครั้งก่อน แตะเลือกเลย · คนใหม่พิมพ์เพิ่มตรงนั้น</p>
-      <p><em>เลขบนชื่อ = ลำดับคิว</em></p>
     </div>
   </div>
 
@@ -228,9 +214,7 @@
     <div class="shotbox"><img src="{{04-arrange}}" alt="หน้าจัดคนลงสนาม มีปุ่มจัดให้อัตโนมัติ"></div>
     <div class="steptext">
       <span class="stepno">4</span>
-      <h3>จัดคนลงสนาม</h3>
-      <p>แตะใส่เอง หรือกด <em>จัดให้อัตโนมัติ</em></p>
-      <p>ที่เหลือกลายเป็นคิวรอให้เอง</p>
+      <h3>จัดคนลงสนาม หรือกดจัดให้อัตโนมัติ</h3>
     </div>
   </div>
 
@@ -239,8 +223,6 @@
     <div class="steptext">
       <span class="stepno">5</span>
       <h3>หน้านี้ใช้ตลอดทั้งเย็น</h3>
-      <p>จอเดียวเห็นครบ — ใครอยู่สนามไหน ตีไปกี่นาที คิวรอเรียง 1 2 3</p>
-      <p>ปุ่ม <em>จบเกม</em> ยิ่งเล่นนานยิ่งเข้ม มองปราดเดียวรู้ว่าสนามไหนใกล้จบ</p>
     </div>
   </div>
 
@@ -248,10 +230,7 @@
     <div class="shotbox"><img src="{{06-endgame}}" alt="หน้ายืนยันจบเกม แสดงว่าใครออก 2 คน และใครลงแทน 2 คน"></div>
     <div class="steptext">
       <span class="stepno">6</span>
-      <h3>ตีจบ กดปุ่มเดียว</h3>
-      <p>กด <em>จบเกม</em> ที่การ์ดสนาม · เลือกคนออก 2 ดึงหัวคิวลง 2 ให้เสร็จ</p>
-      <p>อยากแก้ แตะเปลี่ยนก่อนยืนยัน</p>
-      <div class="tip"><b>ทั้งเย็นทำอยู่อย่างเดียว</b> คือกดปุ่มนี้</div>
+      <h3>ตีจบ กดจบเกม คนออกคนลงเลือกให้แล้ว</h3>
     </div>
   </div>
 
@@ -259,9 +238,7 @@
     <div class="shotbox"><img src="{{07-callout}}" alt="ป้ายเรียกลงสนามเต็มจอ พื้นชมพูเข้ม ชื่อคนที่ต้องลงตัวขาวใหญ่เต็มจอ"></div>
     <div class="steptext">
       <span class="stepno">7</span>
-      <h3>ป้ายเต็มจอ ไม่ต้องตะโกน</h3>
-      <p>ป้ายเด้งขึ้น <em>ทุกเครื่องพร้อมกัน</em> บอกชื่อกับเลขสนาม</p>
-      <p>เครื่องที่กดอ่านชื่อออกเสียงให้ด้วย</p>
+      <h3>ป้ายเรียกเต็มจอ ขึ้นทุกเครื่องพร้อมกัน</h3>
     </div>
   </div>
 
@@ -269,8 +246,7 @@
     <div class="shotbox"><img src="{{10-summary}}" alt="หน้าสรุปเกม แสดงว่าแต่ละคนเล่นไปกี่เกม เรียงจากมากไปน้อย"></div>
     <div class="steptext">
       <span class="stepno">8</span>
-      <h3>จบก๊วน ใครได้ตีกี่เกม</h3>
-      <p>เรียงมากไปน้อย · ยังไม่อยากเลิก กดย้อนกลับไปตีต่อได้</p>
+      <h3>จบก๊วน ดูว่าใครได้ตีกี่เกม</h3>
     </div>
   </div>
 
@@ -278,56 +254,44 @@
     <div class="shotbox"><img src="{{11-cost}}" alt="หน้าคิดเงิน กรอกค่าสนามและจำนวนลูก แล้วแสดงยอดคนละเท่าไหร่"></div>
     <div class="steptext">
       <span class="stepno">9</span>
-      <h3>คิดเงิน หารเท่ากัน</h3>
-      <p>กรอก <em>ค่าสนามรวม</em> กับ <em>จำนวนลูก</em> · ที่เหลือคิดให้ ปัดขึ้นเป็นบาท</p>
-      <p>ค่าสนามกับราคาหลอดจำไว้ให้ครั้งหน้า</p>
-      <div class="tip"><b>QR พร้อมเพย์ฝังในแอปแล้ว</b> ปิดก๊วนแล้วปุ่มจ่ายเงินโผล่ทุกเครื่อง ทุกคนสแกนจ่ายเองได้</div>
+      <h3>คิดเงิน หารเท่ากัน มี QR ให้สแกนจ่าย</h3>
     </div>
   </div>
 
   <div class="court"><span></span><span></span></div>
 
   <h2>ลูกเล่นที่ได้ใช้จริง</h2>
-  <p class="sub">ไม่ต้องใช้ก็ได้ แต่วันวุ่นๆ ได้ใช้ทุกอัน</p>
 
   <div class="extras">
     <div class="extra">
       <div class="shotbox"><img src="{{08-sub}}" alt="หน้าเปลี่ยนตัวกลางเกม เลือกสลับตำแหน่งหรือดึงคนจากคิวลงแทน"></div>
       <h3>เปลี่ยนตัวกลางเกม</h3>
-      <p>แตะชื่อคนในสนาม สลับกันเอง หรือดึงคนจากคิวลงแทน ไม่นับเป็นจบเกม</p>
     </div>
     <div class="extra">
       <div class="shotbox"><img src="{{09-manage}}" alt="หน้ารายชื่อ เพิ่มคนมาสาย ปิดสวิตช์คนที่กลับบ้าน"></div>
       <h3>คนมาสาย คนกลับก่อน</h3>
-      <p>เพิ่มชื่อกลางคันได้ · ปิดสวิตช์คนกลับบ้าน ออกจากคิวทันที แต่ยังนับหารเงิน</p>
     </div>
     <div class="extra">
       <div class="shotbox"><img src="{{12-viewer}}" alt="จอดูสด เห็นสนามและคิวเหมือนกัน แต่กดอะไรไม่ได้"></div>
       <h3>จอดูสดบนมือถือทุกคน</h3>
-      <p>ส่งลิงก์เดียวกันให้ทั้งก๊วน เห็นคิวสดชุดเดียวกัน แต่กดแก้ไม่ได้</p>
     </div>
   </div>
 
   <div class="court"><span></span><span></span></div>
 
   <h2>ข้อจำกัด</h2>
-  <p class="sub">บอกไว้ก่อน จะได้ไม่เซอร์ไพรส์</p>
 
   <ul class="limits">
-    <li><b>ต้องมีคนกดจบเกม ไม่งั้นคิวไม่เดิน</b>
-      <small>ไม่ต้องเป็นคนเดิม วางเครื่องไว้ใกล้สนาม ใครตีเสร็จเดินมากดเอง</small></li>
-    <li><b>เน็ตหลุด เครื่องที่จัดคิวยังใช้ต่อได้</b>
-      <small>จอดูสดค้างที่ข้อมูลล่าสุดจนเน็ตกลับมา</small></li>
-    <li><b>เสียงอ่านชื่อออกเฉพาะเครื่องที่กด</b>
-      <small>เครื่องอื่นเห็นป้ายอย่างเดียว อาจช้ากว่าราว 5 วินาที</small></li>
+    <li><b>ต้องมีคนกดจบเกม ไม่งั้นคิวไม่เดิน</b></li>
+    <li><b>เน็ตหลุด เครื่องที่จัดคิวยังใช้ต่อได้</b></li>
+    <li><b>เสียงอ่านชื่อออกเฉพาะเครื่องที่กด</b></li>
   </ul>
 
   <div class="end">
     <p class="eyebrow">ลองเปิดดูก่อนได้</p>
     <a href="https://joyjad.vercel.app">joyjad.vercel.app</a>
-    <p>เปิดลิงก์เฉยๆ = <b>ดูอย่างเดียว</b> ส่งต่อให้ทั้งก๊วนได้เลย<br>
-    จะจัดคิวจริง <b>แตะคำว่า “จอยจัด” 5 ครั้ง</b> ตั้งครั้งเดียวที่เครื่องที่ใช้จัด<br>
-    ไม่ต้องติดตั้งแอป ไม่ต้องสมัครสมาชิก</p>
+    <p>เปิดลิงก์เฉยๆ = <b>ดูอย่างเดียว</b><br>
+    จะจัดคิว <b>แตะคำว่า “จอยจัด” 5 ครั้ง</b></p>
   </div>
 
 </div>
