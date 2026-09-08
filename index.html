@@ -453,8 +453,8 @@
   #scPlay .qrow.next .qn{ color:#fff; }
   /* 2 คนถัดไปตัวใหญ่สุด ที่เหลือเล็กลง — กวาดตารู้ว่าใครลงต่อ โดยไม่ต้องอ่านทั้งคิว
      คูณกับขนาดฐานของแต่ละ layout จึงได้สัดส่วนเดียวกันทั้งมือถือและ iPad แนวนอน */
-  #scPlay .qrow{ --qname-scale:.86; }
-  #scPlay .qrow.next{ --qname-scale:1.2; }
+  #scPlay .qrow{ --qname-scale:.8; }
+  #scPlay .qrow.next{ --qname-scale:1.55; }
   /* ชื่อยาวให้ขึ้นบรรทัดที่ 2 แทนตัดหาง — บนมือถือชื่อโดนบีบง่าย */
   .qname{
     font-weight:800; font-size:calc(var(--fs-sm) * var(--qname-scale, 1)); flex:1 1 auto; min-width:0;
@@ -884,7 +884,7 @@
     #scPlay .qname{ font-size:calc(var(--qname-fs, clamp(24px, 1.3vw + 1.5vh + 8px, 42px)) * var(--qname-scale, 1)); line-height:1.15; }
     /* จอนี้ fitQueue คิดขนาดชื่อให้พอดีความสูงแถวอยู่แล้ว ขยายต่อจะล้นความกว้างจนชื่อตัดบรรทัด
        เลยให้ 2 คนถัดไปคงขนาดที่คำนวณไว้ แล้วหดที่เหลือแทน */
-    #scPlay .qrow{ --qname-scale:.72; }
+    #scPlay .qrow{ --qname-scale:.62; }
     #scPlay .qrow.next{ --qname-scale:1; }
     #scPlay .qwait{ font-size:calc(var(--qwait-fs, var(--fs-lg)) * .6); }
     #scPlay .qmove button{ width:40px; height:42px; font-size:var(--fs-sm); }
