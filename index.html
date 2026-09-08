@@ -1233,7 +1233,7 @@ var courtCount = 2;
 var roster = [];                     // [{name, last}]  จำข้ามก๊วน
 var prices = { court:0, tube:0 };    // จำราคาไว้ครั้งหน้า
 var selectedCourts = [1,2];          // เลขสนามจริงที่เลือกใช้ (ตามลำดับที่แตะ) จำข้ามก๊วน — ลำดับตอนเล่นดู courtOrder()
-var manualOrder = null;              // ลำดับสนามที่ผู้จัดย้ายเองในขั้นจัดคน (null = ใช้ค่าตั้งต้น มาก->น้อย) จำข้ามก๊วน
+var manualOrder = null;              // ลำดับสนามที่ผู้จัดย้ายเองในขั้นจัดคน (null = ใช้ค่าตั้งต้น น้อย->มาก) จำข้ามก๊วน
 var picked = [];                     // ชื่อที่เลือกวันนี้ (ตามลำดับที่แตะ)
 var players = [];                    // {id,name,attending,status,courtId,games,consec,order}
 var courts  = [];                    // {id, slots:[4], gameNo}
@@ -1668,7 +1668,7 @@ function renderPlan(){
   var html = '<div class="plan-card">'
     + '<div class="plan-tag">' + esc(fmtPlanDay(p)) + '</div>'
     + '<div class="pl-row"><span class="ic">📍</span><b>' + esc(p.venue) + '</b>'
-    +   '<span class="cap">คอร์ท ' + esc(courtsDesc(p.courts).join(", ")) + '</span></div>'
+    +   '<span class="cap">คอร์ท ' + esc(courtsAsc(p.courts).join(", ")) + '</span></div>'
     + '<div class="pl-row"><span class="ic">🕖</span><b>' + esc(p.start) + ' - ' + esc(p.end) + '</b>'
     +   '<span class="cap">' + p.courts.length + ' สนาม</span></div>';
   if(p.note) html += '<div class="pl-row"><span class="ic">📝</span><span class="cap">' + esc(p.note) + '</span></div>';
@@ -1706,7 +1706,7 @@ function applyPlanToSetup(p){
   if(!isAdmin || !p || phase !== "setup" || p.updatedAt === planApplied) return;
   planApplied = p.updatedAt;
   var cs = (p.courts || []).slice(0, MAX_COURTS);
-  if(cs.length){ courtCount = cs.length; selectedCourts = courtsDesc(cs); }
+  if(cs.length){ courtCount = cs.length; selectedCourts = courtsAsc(cs); }
   var names = p.players || [];
   names.forEach(function(n){ rosterAdd(n); });      // ชื่อในนัดที่หลุดจากรายชื่อส่วนกลาง ให้เพิ่มกลับ
   if(names.length) picked = names.slice();
@@ -1829,7 +1829,7 @@ function savePlanForm(){
   if(!planDraft.courts.length){ toast("เลือกคอร์ทอย่างน้อย 1", true); return; }
 
   var p = { v:1, venue:venue, date:date, start:start, end:end,
-            courts:courtsDesc(planDraft.courts),
+            courts:courtsAsc(planDraft.courts),
             players:planDraft.players.slice(), note:"" };
   p.expiresAt = planEndsAt(p) + PLAN_GRACE_MS;
   if(p.expiresAt <= Date.now()){ toast("เวลานัดผ่านไปแล้ว — ตั้งวันหรือเวลาใหม่", true); return; }
@@ -1881,12 +1881,12 @@ function applySnapshot(d){
 }
 
 /* ================= step 1 : courts ================= */
-/* ลำดับสนามทั้งแอป: ค่าตั้งต้นเรียงเลขมากมาก่อน (จอง 1 กับ 2 -> สนาม 2 เป็นช่องแรก)
+/* ลำดับสนามทั้งแอป: ค่าตั้งต้นเรียงเลขน้อยมาก่อน (จอง 1 กับ 2 -> สนาม 1 เป็นช่องแรก)
    ผู้จัดกดปุ่มย้ายเองในขั้นจัดคนได้ ลำดับที่ย้ายเก็บไว้ที่ manualOrder แล้วจำข้ามก๊วน
    selectedCourts ยังเก็บตามลำดับที่แตะไว้เหมือนเดิม เพื่อให้ปุ่มเลือกสนามปลดตัวที่เลือกไว้นานสุดได้ถูก */
-function courtsDesc(list){ return (list || []).slice().sort(function(a,b){ return b-a; }); }
+function courtsAsc(list){ return (list || []).slice().sort(function(a,b){ return a-b; }); }
 function courtOrder(){
-  var base = courtsDesc(selectedCourts);
+  var base = courtsAsc(selectedCourts);
   if(!manualOrder) return base;
   var out = manualOrder.filter(function(n){ return selectedCourts.indexOf(n) >= 0; });   // สนามที่ปลดออกไปแล้ว ตัดทิ้ง
   base.forEach(function(n){ if(out.indexOf(n) < 0) out.push(n); });                      // สนามที่เพิ่งเลือกเพิ่ม ต่อท้าย
