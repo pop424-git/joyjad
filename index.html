@@ -412,8 +412,13 @@
     font-size:var(--fs-xs); font-weight:800; color:var(--accent-ink); background:var(--accent);
     border-radius:999px; padding:2px 9px; white-space:nowrap;
   }
+  /* เลขคิวกับเวลารอซ้อนกันเป็นคอลัมน์ ชื่อจะได้กินความกว้างที่เหลือทั้งหมด */
+  .qhead{
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:1px; flex:0 0 auto; min-width:2em;
+  }
   .qwait{
-    font-size:var(--fs-xs); font-weight:800; color:var(--muted); white-space:nowrap;
+    font-size:calc(var(--fs-xs) * .82); font-weight:700; color:var(--muted); white-space:nowrap;
     font-variant-numeric:tabular-nums; flex:0 0 auto;
   }
   .qrow.next .qwait{ color:var(--accent); }
@@ -881,7 +886,7 @@
        เลยให้ 2 คนถัดไปคงขนาดที่คำนวณไว้ แล้วหดที่เหลือแทน */
     #scPlay .qrow{ --qname-scale:.72; }
     #scPlay .qrow.next{ --qname-scale:1; }
-    #scPlay .qwait{ font-size:var(--qwait-fs, var(--fs-lg)); }
+    #scPlay .qwait{ font-size:calc(var(--qwait-fs, var(--fs-lg)) * .6); }
     #scPlay .qmove button{ width:40px; height:42px; font-size:var(--fs-sm); }
     /* จอนี้ .qn เป็นวงกลมพื้นขาว — กลับสีเลขให้อ่านออกบนแถบสีเต็ม */
     #scPlay .qrow.next .qn{ background:#fff; color:var(--accent); border-color:#fff; }
@@ -2243,9 +2248,9 @@ function renderQueue(){
   if(!wl.length){ cont.innerHTML = '<div class="empty-msg">ไม่มีคนรอคิว — ทุกคนอยู่ในสนาม</div>'; return; }
   cont.innerHTML = wl.map(function(p, i){
     return '<div class="qrow'+(i<ROTATE?" next":"")+'">'
-         + '<span class="qn">'+(i+1)+'</span>'
+         + '<span class="qhead"><span class="qn">'+(i+1)+'</span>'
+         +   '<span class="qwait" data-wait="'+p.id+'">'+fmtWait(p)+'</span></span>'
          + '<span class="qname">'+dispName(p.name)+'</span>'
-         + '<span class="qwait" data-wait="'+p.id+'">'+fmtWait(p)+'</span>'
          + '<span class="qmove">'
          +   '<button data-move="'+p.id+':-1"'+(i===0?" disabled":"")+'>▲</button>'
          +   '<button data-move="'+p.id+':1"'+(i===wl.length-1?" disabled":"")+'>▼</button>'
