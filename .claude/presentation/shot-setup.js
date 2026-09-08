@@ -47,7 +47,20 @@ class CDP {
     if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails.exception));
     return r.result.value;
   }
+  /* รอให้ toast หายก่อนค่อยถ่าย — มันอยู่ 2600ms การหน่วงเวลาตายตัวจึงไม่พอ
+     พื้น 2 วินาทีเสมอ เผื่อ animation อื่นที่ไม่ได้โผล่ผ่าน toast */
+  async settle() {
+    const t0 = Date.now();
+    for (;;) {
+      const busy = await this.evalJS(`(function(){ var t = document.getElementById("toast"); return !!(t && t.className); })()`);
+      const waited = Date.now() - t0;
+      if (!busy && waited >= 2000) return;
+      if (waited > 6000) return;                      // ไม่ยอมหาย ก็ถ่ายไปเลย ดีกว่าค้าง
+      await new Promise(r => setTimeout(r, 200));
+    }
+  }
   async shot(name, clip) {
+    await this.settle();
     const p = { format: "jpeg", quality: 86 };
     if (clip) p.clip = clip;
     const r = await this.send("Page.captureScreenshot", p);

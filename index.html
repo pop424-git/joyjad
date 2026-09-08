@@ -387,7 +387,7 @@
   .court-foot{ flex:0 0 auto; margin-top:6px; }
   .btn-end{
     width:100%; background:var(--accent); color:var(--accent-ink); border:none; border-radius:10px;
-    padding:clamp(8px,1.2vh,13px); font-size:var(--fs-sm); font-weight:800; cursor:pointer;
+    padding:clamp(21px,3.3vh,34px); font-size:var(--fs-md); font-weight:800; cursor:pointer;
   }
   .btn-end.wait{ background:var(--panel2); color:var(--muted); border:1px solid var(--border); }
   /* ยิ่งเล่นนาน ปุ่มยิ่งเข้ม — สนามที่เพิ่งเปลี่ยนคนจะจางสุด */
@@ -2163,7 +2163,7 @@ function renderPlay(){
       + '</div>'
       + courtBodyHTML(c, false)
       + '<div class="court-foot"><button class="btn-end'+(n?" heat-"+heat[c.id]:" wait")+'" data-end="'+c.id+'"'+(n?"":" disabled")+'>'
-      +   (n ? "จบเกม · เปลี่ยนตัว" : "ยังไม่มีคนในสนาม") + '</button></div>'
+      +   (n ? "จบเกม" : "ยังไม่มีคนในสนาม") + '</button></div>'
       + '</div>';
   }).join("");
   renderQueue(); orientCourts(); tickTimers(); fitQueue();
