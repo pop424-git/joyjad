@@ -7,3 +7,6 @@
 *.jpeg
 *.png
 *.webp
+
+# throwaway Chrome profiles the screenshot scripts spawn
+.claude/presentation/_chromeprofile*/

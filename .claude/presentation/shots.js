@@ -97,6 +97,9 @@ const SEED = `(function(){
   let loaded = c.once("Page.loadEventFired");
   await c.send("Page.navigate", { url: APP });
   await loaded;
+  // the app now adopts the newest session from /api/state, so a run left over
+  // on the dev server would skip the screen we are here to capture
+  await c.evalJS(`fetch("/api/_mock?clear=1").then(function(){ return true; })`);
   await c.evalJS(`localStorage.setItem("badminton-admin-v1","1");
                   localStorage.removeItem("badminton-queue-v3"); true`);
   loaded = c.once("Page.loadEventFired");
@@ -160,7 +163,7 @@ const SEED = `(function(){
   await c.shot("10-summary");
 
   // 11 — splitting the bill
-  await c.evalJS(`__bq.showScreen("cost"); __bq.render(); __bq.setCost({court:800, shuttles:9, tube:390}); true`);
+  await c.evalJS(`__bq.showScreen("cost"); __bq.setCost({court:800, shuttles:9, tube:390}); __bq.render(); true`);
   await sleep(700);
   await c.shot("11-cost");
 

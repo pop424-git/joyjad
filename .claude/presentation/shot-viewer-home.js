@@ -69,6 +69,9 @@ class CDP {
   let loaded = c.once("Page.loadEventFired");
   await c.send("Page.navigate", { url: APP });
   await loaded;
+  // the app now adopts the newest session from /api/state, so a run left over
+  // on the dev server would skip the screen we are here to capture
+  await c.evalJS(`fetch("/api/_mock?clear=1").then(function(){ return true; })`);
   await c.evalJS(`localStorage.setItem("badminton-admin-v1","0");
                   localStorage.removeItem("badminton-queue-v3"); true`);
   loaded = c.once("Page.loadEventFired");
