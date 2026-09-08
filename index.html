@@ -395,6 +395,11 @@
   .btn-end.heat-2{ background:var(--accent); color:#fff; }
   .btn-end.heat-1{ background:#f2a8c4; color:#6b1233; }
   .btn-end.heat-0{ background:var(--accent-soft); color:var(--accent); border:1px solid #f0b9cf; }
+  /* มือถือ: จอไม่สูงพอจะรับปุ่มเต็มความสูงแบบแท็บเล็ต การ์ดสนามจะโดนบีบจนภาพคอร์ทเตี้ยกว่าปุ่ม
+     ตัวอักษรคงขนาดเดิม — ความชัดมาจากขนาดตัวอักษร ไม่ใช่ความสูงปุ่ม */
+  @media (max-width:520px){
+    .btn-end{ padding:clamp(12px,2vh,20px); }
+  }
 
   /* ---------- queue ---------- */
   .queue-panel{
