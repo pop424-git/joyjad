@@ -167,10 +167,16 @@ module.exports = async (req, res) => {
       }
 
       if (body.action === "set" && body.state && typeof body.state === "object") {
-        const str = JSON.stringify(body.state);
+        // Two organizer phones use this to work out which of them is behind. Their
+        // own clocks can sit seconds apart, so the write time has to come from here
+        // -- with a client stamp the phone that runs fast would always look newest
+        // and the other one's edits would never be picked up.
+        const stamped = Object.assign({}, body.state, { srvAt: Date.now() });
+        const str = JSON.stringify(stamped);
         if (str.length > MAX_BYTES) { res.status(413).json({ ok: false, reason: "too-large" }); return; }
         await redis(c, ["SET", KEY, str, "EX", TTL_SECONDS]);
-        res.status(200).json({ ok: true });
+        // Echoed so the sender can record its own write and not adopt it back.
+        res.status(200).json({ ok: true, srvAt: stamped.srvAt });
         return;
       }
 

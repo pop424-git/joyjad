@@ -57,7 +57,12 @@ http.createServer((req, res) => {
         let body = {};
         try { body = JSON.parse(raw || "{}"); } catch (e) { /* ignore */ }
         if (body.action === "clear") { mockState = null; sendJSON(res, 200, { ok: true }); return; }
-        if (body.action === "set" && body.state) { mockState = body.state; sendJSON(res, 200, { ok: true }); return; }
+        if (body.action === "set" && body.state) {
+          // Mirrors api/state.js: the write time comes from the server, not the client.
+          mockState = Object.assign({}, body.state, { srvAt: Date.now() });
+          sendJSON(res, 200, { ok: true, srvAt: mockState.srvAt });
+          return;
+        }
         if (body.action === "clearPlan") { mockPlan = null; sendJSON(res, 200, { ok: true, plan: null }); return; }
         if (body.action === "setPlan" && body.plan) {
           mockPlan = Object.assign({}, body.plan, { v: 1, updatedAt: Date.now() });

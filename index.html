@@ -1488,16 +1488,30 @@ function toggleAdmin(){
 
 /* admin -> push snapshot ขึ้น server ให้คนอื่นดูสด (debounce กันยิงถี่) */
 var pushTimer = null, liveOK = null, lastLiveAt = null;
+/* srvAt ของ snapshot ล่าสุดที่เรา "รับรู้แล้ว" — เขียนเองก็นับ ใช้ตัดสินว่าของบน server
+   ใหม่กว่าที่เรามีไหม เวลามาจากนาฬิกา server ตัวเดียว สองเครื่องเทียบกันได้ตรง */
+var lastAppliedSrvAt = 0;
+/* ยิง push ออกไปแล้วแต่ยังไม่รู้ผล — ห้าม adopt ทับช่วงนี้ ไม่งั้นดึงของเก่ามาลบสิ่งที่เพิ่งกด */
+var pushInFlight = false;
+var lastSyncToastAt = 0;
+var SYNC_TOAST_MS = 10000;   // อีกเครื่องแก้รัวๆ อย่าเด้ง toast ทุกครั้ง
 var applyingRemote = false;          // กำลังวาดของที่ดึงมาจาก server — อย่า push กลับ ไม่งั้นก๊วนที่ถูกล้างจะฟื้น
 function pushState(slow){
   if(!isAdmin || applyingRemote || typeof fetch !== "function") return;
   if(pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(function(){
+    pushTimer = null; pushInFlight = true;
     fetch(STATE_API, {
       method:"POST", keepalive:true,
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ action:"set", state:snapshot() })
-    }).then(function(r){ liveOK = r.ok; }, function(){ liveOK = false; });
+    }).then(function(r){ liveOK = r.ok; return r.ok ? r.json() : null; },
+            function(){ liveOK = false; return null; })
+      .then(function(d){
+        pushInFlight = false;
+        // นับของที่เราเพิ่งเขียนว่ารับรู้แล้ว จะได้ไม่ดึงกลับมาทับตัวเอง
+        if(d && d.srvAt > lastAppliedSrvAt) lastAppliedSrvAt = d.srvAt;
+      }, function(){ pushInFlight = false; });
   }, slow ? PUSH_TYPING_MS : PUSH_MS);
 }
 function clearRemoteState(){
@@ -2847,14 +2861,25 @@ function syncAdminState(remote){
     adoptRemote(remote, "ดึงก๊วนล่าสุดจากอีกเครื่องแล้ว");
   } else if(!sessionStartedAt && !live && rs && phase === "setup"){  // เราอยู่หน้าตั้งค่า แต่มีก๊วนเล่นอยู่
     adoptRemote(remote, "มีก๊วนกำลังเล่นอยู่ — ดึงมาแสดงแล้ว");
+  } else if(live && sessionStartedAt && rs && Math.abs(rs - sessionStartedAt) <= 1000
+            && remote.srvAt > lastAppliedSrvAt && !pushTimer && !pushInFlight){
+    // แอดมินอีกเครื่องแก้ก๊วนเดียวกันนี้ทีหลังเรา — ตามให้ทัน ไม่งั้นสองเครื่องแยกกันไปคนละทาง
+    // แล้วต่างคนต่าง push ทับกัน (เครื่องที่กดทีหลังชนะ อีกเครื่องไม่รู้ตัวว่างานหาย)
+    // เงื่อนไข push: ถ้าเรามีของค้างยังไม่ได้ส่ง อย่าเพิ่งดึง ไม่งั้นลบสิ่งที่เพิ่งกดทิ้ง
+    adoptRemote(remote, "อีกเครื่องอัปเดตก๊วนแล้ว", true);
   }
 }
-function adoptRemote(remote, msg){
+function adoptRemote(remote, msg, quiet){
   applyingRemote = true;
   var ok = applySnapshot(remote);
   if(ok){ closeSheet(); showScreen("play"); render(); }
   applyingRemote = false;
-  if(ok) toast(msg);
+  if(!ok) return;
+  if(remote.srvAt > lastAppliedSrvAt) lastAppliedSrvAt = remote.srvAt;
+  if(!quiet){ toast(msg); return; }
+  if(Date.now() - lastSyncToastAt < SYNC_TOAST_MS) return;   // อีกเครื่องแก้ถี่ๆ อย่าเด้งรัว
+  lastSyncToastAt = Date.now();
+  toast(msg);
 }
 function paintOnline(){
   var n = onlineCount, others = Math.max(0, n - 1);
@@ -3071,6 +3096,8 @@ window.__bq = {
   isAdmin:function(){ return isAdmin; }, pollState:pollState, startViewer:startViewer,
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
+  srvSync:function(){ return { lastAppliedSrvAt:lastAppliedSrvAt, pushPending:!!pushTimer,
+                               pushInFlight:pushInFlight }; },
   syncInfo:function(){ return { pollMs:viewerDelay(), lastPollMs:lastPollMs, lastPollAt:lastPollAt,
                                 sincePoll:lastPollAt ? Date.now() - lastPollAt : null,
                                 presenceMs:PRESENCE_MS, heartbeatMs:HEARTBEAT_MS, pushMs:PUSH_MS,
