@@ -46,18 +46,6 @@ async function pipeline(c, commands) {
   return r.json();
 }
 
-// Sorted set of client ids scored by last-seen ms. Stale ids are trimmed on every read.
-async function touchPresence(c, id) {
-  const now = Date.now();
-  const cmds = [["ZREMRANGEBYSCORE", ONLINE_KEY, 0, now - ONLINE_WINDOW_MS]];
-  if (id) cmds.push(["ZADD", ONLINE_KEY, now, id]);
-  cmds.push(["ZCARD", ONLINE_KEY], ["EXPIRE", ONLINE_KEY, 300]);
-  const out = await pipeline(c, cmds);
-  const card = out[id ? 2 : 1];
-  const n = card && typeof card.result !== "undefined" ? Number(card.result) : 0;
-  return isFinite(n) ? n : 0;
-}
-
 function cleanId(raw) {
   const s = String(raw == null ? "" : raw).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
   return s || null;
@@ -123,11 +111,34 @@ module.exports = async (req, res) => {
   try {
     if (req.method === "GET") {
       const id = cleanId(req.query && req.query.id);
-      const [raw, planRaw, online] = await Promise.all([
-        redis(c, ["GET", KEY]),
-        redis(c, ["GET", PLAN_KEY]).catch(() => null),
-        touchPresence(c, id).catch(() => 0),
-      ]);
+
+      // Presence is a sorted set of client ids scored by last-seen ms, trimmed on
+      // each write. It costs 4 commands, so the client only asks for it every ~10s
+      // -- ONLINE_WINDOW_MS is 30s, so a slower refresh shows the same number.
+      // A request with no p= at all is an older client that expects it every poll.
+      const wantPresence = !(req.query && String(req.query.p) === "0");
+      const now = Date.now();
+      const cmds = [["MGET", KEY, PLAN_KEY]];
+      let cardAt = -1;
+      if (wantPresence) {
+        cmds.push(["ZREMRANGEBYSCORE", ONLINE_KEY, 0, now - ONLINE_WINDOW_MS]);
+        if (id) cmds.push(["ZADD", ONLINE_KEY, now, id]);
+        cardAt = cmds.length;
+        cmds.push(["ZCARD", ONLINE_KEY], ["EXPIRE", ONLINE_KEY, 300]);
+      }
+      const out = await pipeline(c, cmds);
+
+      const pair = (out[0] && out[0].result) || [];
+      const raw = pair[0], planRaw = pair[1];
+
+      // Left undefined on a no-presence poll so it drops out of the JSON and the
+      // client keeps the count it already has instead of blinking to zero.
+      let online;
+      if (cardAt >= 0) {
+        const n = Number(out[cardAt] && out[cardAt].result);
+        online = isFinite(n) ? n : 0;
+      }
+
       let state = null;
       if (raw) { try { state = JSON.parse(raw); } catch (e) { state = null; } }
       // อายุก๊วนวัดจากตอนกดเริ่ม ไม่ใช่ savedAt (savedAt เด้งใหม่ทุกครั้งที่แอดมินเซฟ)

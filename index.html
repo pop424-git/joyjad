@@ -1265,7 +1265,12 @@ var RKEY = "badminton-roster-v1";
 var AKEY = "badminton-admin-v1";
 var EKEY = "badminton-ended-v1";
 var STATE_API = "/api/state";
-var POLL_MS = 5000;
+var POLL_FAST_MS = 1500;    // ก๊วนกำลังเล่น — คนดูจ้องจออยู่ ต้องไว
+var POLL_IDLE_MS = 4000;    // ยังไม่เริ่มก๊วน — เปิดลิงก์รอไว้เฉยๆ ดึงห่างได้ ประหยัดโควตา
+var PRESENCE_MS = 10000;    // เช็คอินนับคนออนไลน์ (server ถือว่ายังอยู่ได้ 30 วิ ทุก 10 วิเหลือเฟือ)
+var HEARTBEAT_MS = 3000;    // แอดมินอีกเครื่องเริ่ม/จบก๊วน — ตามให้ทัน
+var PUSH_MS = 200;          // แอดมินกดปุ่ม ดันขึ้น server ให้ไวที่สุด
+var PUSH_TYPING_MS = 800;   // กรอกราคา: renderCost() เรียก save() ทุกตัวอักษร อย่ายิงถี่
 var MIN_COURTS = 1, MAX_COURTS = 4;
 var TOTAL_COURTS = 10;        // สนามจริงที่สนามแบดมีทั้งหมด (คงที่)
 var PER_COURT_MIN = 4;   // ขั้นต่ำต่อสนาม (คู่ = 4 คนพอดี 1 คู่) ไม่จำกัดสูงสุด — คิวรอได้ไม่อั้น
@@ -1484,7 +1489,7 @@ function toggleAdmin(){
 /* admin -> push snapshot ขึ้น server ให้คนอื่นดูสด (debounce กันยิงถี่) */
 var pushTimer = null, liveOK = null, lastLiveAt = null;
 var applyingRemote = false;          // กำลังวาดของที่ดึงมาจาก server — อย่า push กลับ ไม่งั้นก๊วนที่ถูกล้างจะฟื้น
-function pushState(){
+function pushState(slow){
   if(!isAdmin || applyingRemote || typeof fetch !== "function") return;
   if(pushTimer) clearTimeout(pushTimer);
   pushTimer = setTimeout(function(){
@@ -1493,7 +1498,7 @@ function pushState(){
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ action:"set", state:snapshot() })
     }).then(function(r){ liveOK = r.ok; }, function(){ liveOK = false; });
-  }, 800);
+  }, slow ? PUSH_TYPING_MS : PUSH_MS);
 }
 function clearRemoteState(){
   if(pushTimer){ clearTimeout(pushTimer); pushTimer = null; }   // กัน push ที่ค้างคิวยิงตามมาทีหลัง
@@ -1508,8 +1513,8 @@ function snapshot(){
   return { v:3, savedAt:Date.now(), sessionStartedAt:sessionStartedAt, phase:phase, courtCount:courtCount,
            players:players, courts:courts, turnCounter:turnCounter, cost:cost, callout:callout };
 }
-function save(){
-  if(isAdmin) pushState();
+function save(slow){
+  if(isAdmin) pushState(slow);
   if(!storageOK){ saveFailed = true; paintChip(); return; }
   try{
     localStorage.setItem(KEY, JSON.stringify(snapshot()));
@@ -2679,7 +2684,7 @@ function recalcCost(){
     extraEl.textContent = "เก็บได้ " + money(per*heads) + " · พอดีเป๊ะ ไม่เหลือไม่ขาด";
     extraEl.classList.remove("profit");
   }
-  if(phase === "cost") save();
+  if(phase === "cost") save(true);   // กำลังพิมพ์ราคาอยู่ — push แบบ debounce ยาว
 }
 
 /* ================= screens ================= */
@@ -2755,31 +2760,58 @@ function showViewerEmpty(){
   players = []; courts = [];
   showScreen("setup"); renderSetup();
 }
+/* นับคนออนไลน์กิน 4 Redis commands ต่อครั้ง แต่ server ถือว่ายังอยู่ได้ 30 วิ
+   เลยขอเช็คอินแค่ทุก PRESENCE_MS ส่วน poll ที่เหลือขอแค่ state (1 command) */
+var lastPresenceAt = 0;
+function stateUrl(){
+  var now = Date.now(), want = now - lastPresenceAt >= PRESENCE_MS;
+  if(want) lastPresenceAt = now;
+  return STATE_API + "?id=" + encodeURIComponent(clientId) + "&p=" + (want ? "1" : "0");
+}
+
+/* ดึงถี่เฉพาะตอนมีอะไรให้ดู — คนเปิดลิงก์รอล่วงหน้าไม่ควรกินโควตาเท่าตอนเล่นจริง */
+var viewerRunning = false, lastPollMs = 0, lastPollAt = 0;
+function viewerDelay(){
+  return (phase === "play" && players.length) ? POLL_FAST_MS : POLL_IDLE_MS;
+}
+function scheduleViewerPoll(){
+  if(!viewerRunning) return;
+  if(pollTimer) clearTimeout(pollTimer);
+  pollTimer = setTimeout(function(){
+    if(document.visibilityState === "visible") pollState();
+    else scheduleViewerPoll();          // แท็บซ่อนอยู่ ไม่ยิง แต่ต้องนัดรอบหน้าไว้
+  }, viewerDelay());
+}
+
 function pollState(){
   if(typeof fetch !== "function"){ paintLive(false); return; }
-  fetch(STATE_API + "?id=" + encodeURIComponent(clientId), { headers:{ Accept:"application/json" } })
+  var t0 = Date.now();
+  fetch(stateUrl(), { headers:{ Accept:"application/json" } })
     .then(function(r){ return r.ok ? r.json() : Promise.reject(new Error(String(r.status))); })
     .then(function(d){
       if(!d || !d.ok) throw new Error("bad");
+      lastPollAt = t0; lastPollMs = Date.now() - t0;
       lastLiveAt = new Date();
-      onlineCount = d.online || 0;
+      if(typeof d.online === "number") onlineCount = d.online;   // รอบที่ไม่เช็คอิน server ไม่ส่งมา คงเลขเดิมไว้
       checkCallout(d.state);
       moneyTime = !!(d.state && (d.state.phase === "summary" || d.state.phase === "cost"));
       setPlanFromServer(d.plan);
       if(d.state && applySnapshot(d.state)){ showScreen("play"); renderPlay(); }
       else showViewerEmpty();
       paintLive(true); paintOnline();
+      scheduleViewerPoll();
     })
-    .catch(function(){ paintLive(false); });
+    .catch(function(){ paintLive(false); scheduleViewerPoll(); });
 }
 /* แอดมินก็ต้องเช็คอินด้วย ไม่งั้นตัวเองไม่ถูกนับ และไม่เห็นว่ามีคนรอดูกี่คน */
 function heartbeat(){
   if(typeof fetch !== "function") return;
-  fetch(STATE_API + "?id=" + encodeURIComponent(clientId), { headers:{ Accept:"application/json" } })
+  fetch(stateUrl(), { headers:{ Accept:"application/json" } })
     .then(function(r){ return r.ok ? r.json() : null; })
     .then(function(d){
       if(!d || !d.ok) return;
-      onlineCount = d.online || 0; paintOnline();
+      if(typeof d.online === "number") onlineCount = d.online;
+      paintOnline();
       checkCallout(d.state);
       if(!planDraft) setPlanFromServer(d.plan);   // กำลังกรอกฟอร์มอยู่ อย่าเพิ่งวาดทับ
       syncAdminState(d.state);
@@ -2837,10 +2869,8 @@ function paintOnline(){
 function startViewer(){
   document.body.classList.add("viewer");
   showViewerEmpty(); paintLive();
-  pollState();
-  pollTimer = setInterval(function(){
-    if(document.visibilityState === "visible") pollState();
-  }, POLL_MS);
+  viewerRunning = true;
+  pollState();                         // รอบถัดไปนัดเองจากท้าย pollState เพื่อให้เปลี่ยนจังหวะกลางคันได้
 }
 
 /* ================= events ================= */
@@ -3014,7 +3044,12 @@ window.addEventListener("resize", function(){
 });
 window.addEventListener("pagehide", function(){ if(players.length && phase !== "setup" && phase !== "pick") save(); });
 document.addEventListener("visibilitychange", function(){
-  if(document.visibilityState === "hidden" && players.length && phase !== "setup" && phase !== "pick") save();
+  if(document.visibilityState === "hidden"){
+    if(players.length && phase !== "setup" && phase !== "pick") save();
+    return;
+  }
+  if(viewerRunning) pollState();       // กลับเข้าแท็บ: ดึงทันที ไม่ต้องรอรอบถัดไป
+  else if(isAdmin) heartbeat();
 });
 
 /* ================= test hook ================= */
@@ -3036,6 +3071,10 @@ window.__bq = {
   isAdmin:function(){ return isAdmin; }, pollState:pollState, startViewer:startViewer,
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
+  syncInfo:function(){ return { pollMs:viewerDelay(), lastPollMs:lastPollMs, lastPollAt:lastPollAt,
+                                sincePoll:lastPollAt ? Date.now() - lastPollAt : null,
+                                presenceMs:PRESENCE_MS, heartbeatMs:HEARTBEAT_MS, pushMs:PUSH_MS,
+                                viewerRunning:viewerRunning, online:onlineCount }; },
   endedSession:function(){ return endedSession; },
   qr:function(){ return QR_PAY; }, mountQr:mountQr,
   openQrView:openQrView, closeQrView:closeQrView,
@@ -3058,7 +3097,7 @@ window.__bq = {
   if(!isAdmin){ startViewer(); return; }     // เปิดลิงก์เฉยๆ = จอดูสด
 
   heartbeat();
-  setInterval(function(){ if(document.visibilityState === "visible") heartbeat(); }, 8000);
+  setInterval(function(){ if(document.visibilityState === "visible") heartbeat(); }, HEARTBEAT_MS);
   fetchRoster();
   var saved = loadSaved();
   var resumable = saved && (saved.phase === "play" || saved.phase === "summary" || saved.phase === "cost");
