@@ -14,7 +14,7 @@ const TTL_SECONDS = Math.ceil(SESSION_MAX_MS / 1000);
 const ADMIN_WINDOW_MS = 150000;   // แอดมินต่ออายุทุก 60 วิ — เผื่อพลาดได้ 1 รอบก่อนหลุดจากจำนวน
 const PLAN_MAX_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;   // กัน expiresAt เพี้ยนมาค้างยาว
 const PLAN_MAX_COURTS = 4;
-const PLAN_TOTAL_COURTS = 4;
+const PLAN_TOTAL_COURTS = 6;
 const PLAN_MAX_PLAYERS = 60;
 
 function creds() {
