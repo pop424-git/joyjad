@@ -1519,7 +1519,7 @@ var RESUME_MS = SESSION_MAX_MIN*60*1000;
 
 /* ================= state ================= */
 var phase = "setup";                 // setup | pick | play | summary
-var courtCount = 4;
+var courtCount = 2;
 var rotateOut = 2;                   // โหมดการเล่น: จบเกมแล้วสลับกี่คน (2 = เข้า 2 ออก 2, 4 = เปลี่ยนยกชุด) จำข้ามก๊วน
 var roster = [];                     // [{name, last, level}]  จำข้ามก๊วน
 var selectedCourts = [1,2];          // เลขสนามจริงที่เลือกใช้ (ตามลำดับที่แตะ) จำข้ามก๊วน — ลำดับตอนเล่นดู courtOrder()
