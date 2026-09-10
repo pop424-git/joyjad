@@ -7,14 +7,14 @@
 
 const KEY = "badminton:state";
 const PLAN_KEY = "badminton:plan";
-const ONLINE_KEY = "badminton:online";
+const ADMIN_KEY = "badminton:admins";
 const MAX_BYTES = 40000;
 const SESSION_MAX_MS = 300 * 60 * 1000;   // ก๊วนเกิน 5 ชม. = ลืมปิด ทิ้งเอง
 const TTL_SECONDS = Math.ceil(SESSION_MAX_MS / 1000);
-const ONLINE_WINDOW_MS = 30000;   // ไม่ heartbeat เกินนี้ = ถือว่าปิดหน้าไปแล้ว
+const ADMIN_WINDOW_MS = 150000;   // แอดมินต่ออายุทุก 60 วิ — เผื่อพลาดได้ 1 รอบก่อนหลุดจากจำนวน
 const PLAN_MAX_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;   // กัน expiresAt เพี้ยนมาค้างยาว
 const PLAN_MAX_COURTS = 4;
-const PLAN_TOTAL_COURTS = 10;
+const PLAN_TOTAL_COURTS = 4;
 const PLAN_MAX_PLAYERS = 60;
 
 function creds() {
@@ -112,26 +112,32 @@ module.exports = async (req, res) => {
     if (req.method === "GET") {
       const id = cleanId(req.query && req.query.id);
 
-      // Presence is a sorted set of client ids scored by last-seen ms, trimmed on
-      // each write. It costs 4 commands, so the client only asks for it every ~10s
-      // -- ONLINE_WINDOW_MS is 30s, so a slower refresh shows the same number.
-      // A request with no p= at all is an older client that expects it every poll.
-      const wantPresence = !(req.query && String(req.query.p) === "0");
+      // Presence now only tracks admin devices ("N คนคุมอยู่") -- viewers never
+      // check in, so a plain viewer poll costs exactly 1 command (the MGET).
+      // A request carries admin=1 only when the tab is in admin mode.
+      const wantAdmin = !!(req.query && String(req.query.admin) === "1" && id);
       const now = Date.now();
       const cmds = [["MGET", KEY, PLAN_KEY]];
       let cardAt = -1;
-      if (wantPresence) {
-        cmds.push(["ZREMRANGEBYSCORE", ONLINE_KEY, 0, now - ONLINE_WINDOW_MS]);
-        if (id) cmds.push(["ZADD", ONLINE_KEY, now, id]);
+      if (wantAdmin) {
+        cmds.push(["ZADD", ADMIN_KEY, now, id]);
         cardAt = cmds.length;
-        cmds.push(["ZCARD", ONLINE_KEY], ["EXPIRE", ONLINE_KEY, 300]);
+        // ZCOUNT reads the live window without trimming first, so a normal
+        // check-in is just ZADD + ZCOUNT (2 commands). Expired ids still sit in
+        // the set between trims, but ZCOUNT's score range already excludes them.
+        cmds.push(["ZCOUNT", ADMIN_KEY, now - ADMIN_WINDOW_MS, "+inf"]);
+        // Trim the stale entries and refresh the key's own TTL every so often --
+        // not on every poll, since the count above doesn't need it to be exact.
+        if (Math.random() < 0.05) {
+          cmds.push(["ZREMRANGEBYSCORE", ADMIN_KEY, 0, now - ADMIN_WINDOW_MS], ["EXPIRE", ADMIN_KEY, 600]);
+        }
       }
       const out = await pipeline(c, cmds);
 
       const pair = (out[0] && out[0].result) || [];
       const raw = pair[0], planRaw = pair[1];
 
-      // Left undefined on a no-presence poll so it drops out of the JSON and the
+      // Left undefined on a viewer poll so it drops out of the JSON and the
       // client keeps the count it already has instead of blinking to zero.
       let online;
       if (cardAt >= 0) {
@@ -162,6 +168,16 @@ module.exports = async (req, res) => {
 
       if (body.action === "clear") {
         await redis(c, ["DEL", KEY]);
+        res.status(200).json({ ok: true });
+        return;
+      }
+
+      // Sent via sendBeacon on pagehide, and before the reload that leaves admin
+      // mode -- an explicit leave so the count drops immediately instead of
+      // waiting out ADMIN_WINDOW_MS for the stale entry to age out.
+      if (body.action === "adminOut") {
+        const id = cleanId(body.id);
+        if (id) await redis(c, ["ZREM", ADMIN_KEY, id]);
         res.status(200).json({ ok: true });
         return;
       }
