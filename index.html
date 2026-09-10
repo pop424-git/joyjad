@@ -1276,6 +1276,11 @@
     padding:clamp(14px,2.6vh,26px) clamp(12px,2.4vw,26px); box-shadow:0 18px 50px rgba(194,24,91,.4);
   }
   /* รูปต้องยอมเล็กลงตามจอ ไม่งั้นชื่อบัญชีกับปุ่มปิดตกขอบล่างบนจอเตี้ย */
+  .qr-per{ display:flex; align-items:baseline; gap:8px; justify-content:center; flex-wrap:wrap; }
+  .qr-per[hidden]{ display:none; }
+  .qr-per .lbl{ font-size:var(--fs-md); font-weight:800; color:var(--muted); }
+  .qr-per .val{ font-size:clamp(40px,9vw,64px); font-weight:900; color:var(--accent); line-height:1; }
+  .qr-per .unit{ font-size:var(--fs-md); font-weight:800; color:var(--accent); }
   .qr-img{
     width:auto; max-width:min(100%,340px); max-height:52dvh; object-fit:contain;
     border-radius:12px; border:1px solid var(--border); background:#fff; display:block;
@@ -1405,6 +1410,8 @@
 
 <!-- QR จ่ายเงิน — เปิดเต็มจอตอนกดปุ่ม 💸 จากหน้าสรุป -->
 <div id="qrView"><div class="qr-card">
+  <div class="qr-per" id="qrPerWrap"><span class="lbl">คนละ</span><span class="val" id="qrPer">0</span><span class="unit">บาท</span></div>
+  <div class="qr-note" id="qrPerNote"></div>
   <img class="qr-img" id="qrImg" alt="QR พร้อมเพย์สำหรับจ่ายค่าก๊วน">
   <div class="qr-acct" id="qrAcct"></div>
   <div class="qr-note">สแกนแล้วกรอกยอดเอง (QR นี้ไม่ได้ล็อกจำนวนเงิน)</div>
@@ -3539,6 +3546,19 @@ var QR_PAY = {
   data: QR_PAY_DATA
 };
 function openQrView(){
+  var pay = payShares();
+  var perWrap = document.getElementById("qrPerWrap"), note = document.getElementById("qrPerNote");
+  if(pay.byGames){
+    // หารตามเกม — คนละยอดไม่เท่ากัน ไม่มีตัวเลขเดียวให้โชว์ตรงนี้ ชี้กลับไปที่การ์ดกลุ่ม
+    perWrap.hidden = true;
+    note.textContent = "หารตามเกมที่ลง — ยอดต่อคนไม่เท่ากัน ดูยอดของคุณจากการ์ดกลุ่มด้านบน";
+  } else {
+    var ids = Object.keys(pay.map);
+    var amt = ids.length ? pay.map[ids[0]] : 0;
+    document.getElementById("qrPer").textContent = amt.toLocaleString("th-TH");
+    perWrap.hidden = false;
+    note.textContent = "";
+  }
   document.getElementById("qrImg").src = QR_PAY.data;
   document.getElementById("qrAcct").textContent = QR_PAY.account;
   document.getElementById("qrView").classList.add("show");
