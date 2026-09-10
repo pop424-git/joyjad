@@ -228,7 +228,8 @@
   .note-line.good{ color:var(--in); font-weight:700; }
 
   /* ---------- step 1: courts ---------- */
-  .court-choices{ display:grid; grid-template-columns:repeat(6,1fr); gap:var(--gap); flex:0 0 auto; }
+  /* แถว "จองกี่สนาม" มี MAX_COURTS ตัวเลือก (1..4) — คนละอันกับ .court-slots ด้านล่างที่มีครบ TOTAL_COURTS (6) ให้เลือกเลขจริง */
+  .court-choices{ display:grid; grid-template-columns:repeat(4,1fr); gap:var(--gap); flex:0 0 auto; }
   .court-slots{ display:grid; grid-template-columns:repeat(6,1fr); gap:8px; margin-top:6px; flex:0 0 auto; }
   .cslot{
     position:relative; aspect-ratio:5/4; border-radius:8px; overflow:hidden; cursor:pointer;
