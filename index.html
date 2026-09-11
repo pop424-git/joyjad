@@ -793,6 +793,7 @@
   }
   /* บรรทัดแรก: รวม [ยอด] บาท ........ [แยกรายการ] · บรรทัดสอง: เก็บได้/เหลือ */
   .payrow{ display:flex; align-items:center; gap:clamp(6px,1vw,12px); flex-wrap:wrap; }
+  .payrow[hidden]{ display:none; }
   .payrow .lbl{ font-size:var(--fs-xs); color:var(--muted); font-weight:800; letter-spacing:1.5px; flex:0 0 auto; }
   /* ยอดรวมแก้มือได้ — หน้าตาเหมือนตัวเลขโชว์ ไม่ใช่กล่อง input ให้รก */
   .payrow input{
@@ -811,18 +812,33 @@
     position:relative; display:flex; flex:1 1 220px; min-width:190px; margin-left:auto;
     background:var(--panel2); border:1px solid var(--border); border-radius:999px; padding:3px;
   }
+  .split-seg.wide{ flex:1 1 auto; width:100%; margin-left:0; }
   .split-seg[hidden]{ display:none; }
   .split-seg-thumb{
     position:absolute; top:3px; left:3px; bottom:3px; width:calc(50% - 3px);
     background:var(--accent); border-radius:999px; transition:transform .22s ease;
   }
-  .split-seg.equal .split-seg-thumb{ transform:translateX(100%); }
+  .split-seg.on2 .split-seg-thumb{ transform:translateX(100%); }
   .split-opt{
     position:relative; z-index:1; flex:1 1 0; border:none; background:none;
     padding:7px 8px; font-family:inherit; font-weight:700; font-size:var(--fs-xs);
     color:var(--muted); cursor:pointer; transition:color .22s ease; white-space:nowrap;
   }
   .split-opt.on{ color:var(--accent-ink); }
+  /* คิดตามอัตรา — สองช่องเล็กเรียงข้างกัน (สนาม/ลูก) แทนช่องยอดรวมใหญ่ */
+  .rate-row{ gap:clamp(14px,3vw,28px); }
+  .rate-field{ display:flex; align-items:baseline; gap:6px; }
+  .rate-field .lbl{ letter-spacing:.5px; }
+  .rate-field input{
+    width:4ch; background:none; border:none; padding:0;
+    border-bottom:2px dashed var(--border); text-align:right;
+    font-family:inherit; font-weight:800; color:var(--accent); line-height:1;
+    font-size:clamp(20px, 1.2vw + 1.2vh + 8px, 30px);
+  }
+  .rate-field input:focus{ outline:none; border-bottom-color:var(--accent); }
+  .rate-field input::-webkit-outer-spin-button,
+  .rate-field input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .rate-field .unit{ font-size:var(--fs-xs); color:var(--muted); font-weight:700; }
   /* แนวนอนมีที่เหลือด้านข้าง — ยอดรวมย่อลงหน่อย แถบเงินจะได้เตี้ย
      เหลือความสูงให้การ์ดรายชื่อมากที่สุด */
   @media (orientation:landscape){
@@ -1389,15 +1405,37 @@
 
     <div class="paytop">
       <div class="payrow">
+        <div class="split-seg wide" id="modeSeg">
+          <div class="split-seg-thumb"></div>
+          <button type="button" class="split-opt" data-mode="total">ยอดรวมหารเท่า</button>
+          <button type="button" class="split-opt" data-mode="rate">คิดตามอัตรา</button>
+        </div>
+      </div>
+      <div class="payrow" id="totalRow">
         <label class="lbl" for="inTotal">รวม</label>
         <input id="inTotal" type="number" inputmode="decimal" min="0" step="50" placeholder="0">
         <span class="unit">บาท</span>
-        <div class="split-seg" id="splitSeg" hidden>
-          <div class="split-seg-thumb"></div>
-          <button type="button" class="split-opt" data-split="games">หารตามเกม</button>
-          <button type="button" class="split-opt" data-split="equal">หารเท่ากัน</button>
+      </div>
+      <div class="payrow rate-row" id="rateRow" hidden>
+        <div class="rate-field">
+          <label class="lbl" for="inCourt">สนาม</label>
+          <input id="inCourt" type="number" inputmode="decimal" min="0" step="5" placeholder="0">
+          <span class="unit">฿/คน</span>
+        </div>
+        <div class="rate-field">
+          <label class="lbl" for="inBall">ลูก</label>
+          <input id="inBall" type="number" inputmode="decimal" min="0" step="5" placeholder="0">
+          <span class="unit">฿/เกม</span>
         </div>
       </div>
+      <div class="payrow" id="twoWayRow" hidden>
+        <div class="split-seg wide" id="twoWaySeg">
+          <div class="split-seg-thumb"></div>
+          <button type="button" class="split-opt" data-tw="0">ตีปกติ</button>
+          <button type="button" class="split-opt" data-tw="1">ตีไป-กลับ</button>
+        </div>
+      </div>
+    </div>
 
     <div class="scroll-area"><div class="sumtable" id="sumTable"></div></div>
     <div class="wiz-foot">
@@ -1535,8 +1573,10 @@ var picked = [];                     // ชื่อที่เลือกว�
 var players = [];                    // {id,name,attending,status,courtId,games,consec,order}
 var courts  = [];                    // {id, slots:[4], gameNo}
 var turnCounter = 0;
-var cost = { total:0, split:"games" };   // ยอดที่จะเก็บทั้งก๊วน — ผู้จัดบวกค่าสนาม+ค่าลูกมาแล้วกรอกก้อนเดียว
-                                          // split: "games" หารตามเกม (ค่าเริ่มต้น, 4ออก4 เท่านั้น) หรือ "equal" หารเท่ากัน
+/* mode "total": กรอกยอดรวมก้อนเดียว หารเท่ากันทุกคน
+   mode "rate": คิดตามอัตรา — คนละ courtFee + ballFee×เกมที่ลง (×2 ถ้าตีไป-กลับ) */
+function defaultCost(){ return { mode:"total", total:0, courtFee:80, ballFee:25, twoWay:false }; }
+var cost = defaultCost();
 var pending = null;                  // sheet state
 var sessionStartedAt = null;         // เวลาที่กดเริ่มก๊วน — ใช้วัดอายุก๊วน (savedAt เด้งใหม่ทุกครั้งที่เซฟ ใช้วัดไม่ได้)
 var endedSession = (function(){      // ก๊วนที่เครื่องนี้จบไปแล้ว กันเครื่องอื่น push กลับมา
@@ -1686,13 +1726,20 @@ function checkCallout(remote){
   showCallout(c);
 }
 
-/* ก๊วนเก่าเก็บค่าลูกเป็น "จำนวนลูก + ราคาต่อหลอด" — ยุบเป็นยอดบาทก้อนเดียว
-   ของที่ค้างในเครื่องหรือมาจากเครื่องที่ยังไม่อัปเดตจะได้ไม่กลายเป็น 0 */
+/* ก๊วนเก่าเก็บค่าลูกเป็น "จำนวนลูก + ราคาต่อหลอด" หรือแยกยอดสนาม/ลูกคนละก้อน — ยุบ/แปลงให้เข้ารูปใหม่
+   ของที่ค้างในเครื่องหรือมาจากเครื่องที่ยังไม่อัปเดตจะได้ไม่กลายเป็น 0 หรือพัง */
 function normCost(c){
-  if(!c) return { total:0, split:"games" };
+  if(!c) return defaultCost();
+  if(c.mode === "rate"){
+    var cf = +c.courtFee, bf = +c.ballFee;
+    return { mode:"rate", total:0,
+             courtFee: isFinite(cf) && cf >= 0 ? cf : 80,
+             ballFee: isFinite(bf) && bf >= 0 ? bf : 25,
+             twoWay: !!c.twoWay };
+  }
   var total = +c.total;
   if(!isFinite(total) || total <= 0){
-    // ก๊วนเก่าเก็บแยกค่าสนาม/ค่าลูก (บางรุ่นเก็บเป็นจำนวนลูก × ราคาต่อหลอด) — บวกเป็นก้อนเดียว
+    // ก๊วนเก่ามาก เก็บแยกค่าสนาม/ค่าลูก (บางรุ่นเก็บเป็นจำนวนลูก × ราคาต่อหลอด) — บวกเป็นก้อนเดียว
     var shuttle = +c.shuttle;
     if(!isFinite(shuttle) || shuttle < 0){
       var n = +c.shuttles || 0, tube = +c.tube || 0;
@@ -1700,29 +1747,38 @@ function normCost(c){
     }
     total = (+c.court || 0) + shuttle;
   }
-  return { total:total, split: c.split === "equal" ? "equal" : "games" };
+  return { mode:"total", total:total, courtFee:80, ballFee:25, twoWay:false };
 }
 /* ยอดที่แต่ละคนต้องจ่าย
-   2 ออก 2 — คิวหมุนถี่ ทุกคนได้ลงพอกัน หารเท่ากันทุกหัวเสมอ
-   4 ออก 4 — เปลี่ยนยกชุด จำนวนเกมห่างกันมาก ค่าเริ่มต้นหารตามเกมที่ได้ลง
-             แต่ผู้จัดสลับเป็นหารเท่ากันได้ผ่าน cost.split
+   mode "total" — กรอกยอดรวมก้อนเดียว หารเท่ากันทุกคนที่ลงวันนี้
+   mode "rate" — คนละ courtFee + ballFee×เกมที่ลง (×2 ถ้าตีไป-กลับ) — คนที่ยังไม่ได้ลงเกมเลยไม่คิด
    เศษปัดขึ้นเป็นบาท ส่วนต่างที่เกินตกเป็นของผู้จัด */
 function payShares(){
-  var total = cost.total;
-  var byGames = rotateOut === 4 && cost.split !== "equal";
-  var payers = byGames ? players.filter(function(p){ return p.games > 0; }) : players.slice();
-  if(!payers.length) payers = players.slice();
-  var heads = payers.length || 1, games = 0;
-  payers.forEach(function(p){ games += p.games; });
-  if(games <= 0) byGames = false;                   // ยังไม่มีเกมให้ถ่วงน้ำหนัก หารเท่าไปก่อน
-  var map = {}, collected = 0;
-  payers.forEach(function(p){
-    var raw = byGames ? total * (p.games / games) : total / heads;
-    var amt = Math.ceil(raw - 1e-9);                // กัน float เกินมานิดเดียวแล้วปัดขึ้นทั้งบาท
-    map[p.id] = amt; collected += amt;
-  });
+  var byRate = cost.mode === "rate";
+  var map = {}, collected = 0, games = 0, total, heads, payers;
+  if(byRate){
+    payers = players.filter(function(p){ return p.games > 0; });
+    if(!payers.length) payers = players.slice();
+    var mult = cost.twoWay ? 2 : 1;
+    payers.forEach(function(p){
+      games += p.games;
+      var raw = (cost.courtFee || 0) + (cost.ballFee || 0) * p.games * mult;
+      var amt = Math.ceil(raw - 1e-9);
+      map[p.id] = amt; collected += amt;
+    });
+    total = collected;
+  } else {
+    total = cost.total;
+    payers = players.slice();
+    payers.forEach(function(p){
+      games += p.games;
+      var amt = Math.ceil(total / (payers.length || 1) - 1e-9);
+      map[p.id] = amt; collected += amt;
+    });
+  }
+  heads = payers.length || 1;
   return { map:map, total:total, collected:collected, extra:collected - total,
-           heads:heads, games:games, byGames:byGames, skipped:players.length - heads };
+           heads:heads, games:games, byRate:byRate, skipped:players.length - heads };
 }
 function money(n){
   var r = Math.round(n*100)/100;
@@ -3062,27 +3118,37 @@ function joinFromRoster(name){
 /* ================= summary + cost ================= */
 var COURT_FEE_GUESS = 400;   // ค่าสนามคร่าวๆ ต่อสนาม ไว้ตั้งต้นให้กรอกน้อยลง แก้ตัวเลขเองได้เสมอ
 function renderSummary(){
-  if(!cost.total) cost.total = courts.length * COURT_FEE_GUESS;   // เดาไว้ก่อน สนามละ 400 แก้ทับได้เลย
+  var isRate = cost.mode === "rate";
+  if(!isRate && !cost.total) cost.total = courts.length * COURT_FEE_GUESS;   // เดาไว้ก่อน สนามละ 400 แก้ทับได้เลย
   setFieldValue("inTotal", cost.total);
+  setFieldValue("inCourt", cost.courtFee);
+  setFieldValue("inBall", cost.ballFee);
 
   var pay = payShares();
   var totalGames = 0;
   players.forEach(function(p){ totalGames += p.games; });
   document.getElementById("summarySub").textContent =
     players.length + " คน · " + courts.length + " สนาม · " + totalGames + " เกม (" + Math.round(totalGames/SLOTS) + " แมตช์)"
-    + (pay.byGames ? " · หารตามเกมที่ลง" : " · หารเท่ากันทุกคน");
+    + (isRate ? " · คิดตามอัตรา" + (cost.twoWay ? " (ไป-กลับ)" : "") : " · หารเท่ากันทุกคน");
 
-  // toggle สูตรหารมีผลเฉพาะ 4 ออก 4 — 2 ออก 2 หารเท่ากันเสมอ ไม่ต้องเลือก
-  // cost.split เผื่อไม่มีค่า (จบก๊วนใหม่/ยังไม่เคยเลือก) ถือว่าเป็น "games" เหมือน normCost()
-  var seg = document.getElementById("splitSeg");
-  seg.hidden = rotateOut !== 4;
-  var curSplit = cost.split === "equal" ? "equal" : "games";
-  seg.classList.toggle("equal", curSplit === "equal");
-  seg.querySelectorAll(".split-opt").forEach(function(b){
-    b.classList.toggle("on", b.getAttribute("data-split") === curSplit);
+  // toggle ยอดรวม/คิดตามอัตรา
+  var modeSeg = document.getElementById("modeSeg");
+  modeSeg.classList.toggle("on2", isRate);
+  modeSeg.querySelectorAll(".split-opt").forEach(function(b){
+    b.classList.toggle("on", b.getAttribute("data-mode") === cost.mode);
   });
+  document.getElementById("totalRow").hidden = isRate;
+  document.getElementById("rateRow").hidden = !isRate;
+  document.getElementById("twoWayRow").hidden = !isRate;
+  if(isRate){
+    var twSeg = document.getElementById("twoWaySeg");
+    twSeg.classList.toggle("on2", !!cost.twoWay);
+    twSeg.querySelectorAll(".split-opt").forEach(function(b){
+      b.classList.toggle("on", (b.getAttribute("data-tw") === "1") === !!cost.twoWay);
+    });
+  }
 
-  // 4 ออก 4 คนเล่นเยอะจ่ายเยอะ เรียงคนจ่ายมากไว้บนสุด · 2 ออก 2 จ่ายเท่ากันหมด เรียงตามเกมพอ
+  // คิดตามอัตรา คนเล่นเยอะจ่ายเยอะ เรียงคนจ่ายมากไว้บนสุด · หารเท่า จ่ายเท่ากันหมด เรียงตามเกมพอ
   // จัดกลุ่มตามจำนวนเกม — เล่นเท่ากันก็จ่ายเท่ากัน อ่านยอดทีเดียวได้ทั้งกลุ่ม ไม่ต้องไล่ทีละคน
   var sorted = players.slice().sort(function(a,b){
     return (b.games - a.games) || a.name.localeCompare(b.name,"th");
@@ -3093,7 +3159,7 @@ function renderSummary(){
     if(!g || g.games !== p.games){ g = { games:p.games, amt:pay.map[p.id], list:[] }; groups.push(g); }
     g.list.push(p);
   });
-  if(pay.byGames){
+  if(pay.byRate){
     var paid = groups.filter(function(g){ return g.amt !== undefined; }).length;
     document.getElementById("sumTable").innerHTML = groups.map(function(g, i){
       // จ่ายมากสุด = เข้มสุด ไล่อ่อนลงตามลำดับกลุ่ม
@@ -3156,7 +3222,7 @@ function newSession(skipConfirm){
   clearSaved(); clearRemoteState();
   players = []; courts = []; picked = []; turnCounter = 0; pending = null; sessionStartedAt = null;
   callout = null; hideCallout();
-  cost = { total:0 };
+  cost = defaultCost();
   closeSheet();
   showScreen("setup"); render();
 }
@@ -3274,7 +3340,7 @@ function syncAdminState(remote){
       try{ localStorage.setItem(EKEY, String(endedSession)); }catch(e){}
       clearSaved();
       players = []; courts = []; picked = []; turnCounter = 0; sessionStartedAt = null;
-      cost = { total:0 };
+      cost = defaultCost();
       closeSheet(); showScreen("setup"); render();
       toast("ก๊วนถูกจบจากอีกเครื่อง — เริ่มก๊วนใหม่ได้เลย");
     }
@@ -3531,10 +3597,20 @@ function bindCost(id, key){
   });
 }
 bindCost("inTotal","total");
-document.getElementById("splitSeg").addEventListener("click", function(e){
+bindCost("inCourt","courtFee");
+bindCost("inBall","ballFee");
+document.getElementById("modeSeg").addEventListener("click", function(e){
   var btn = e.target.closest(".split-opt");
   if(!btn) return;
-  cost.split = btn.getAttribute("data-split");
+  cost.mode = btn.getAttribute("data-mode") === "rate" ? "rate" : "total";
+  saveRoster();
+  renderSummary();
+});
+document.getElementById("twoWaySeg").addEventListener("click", function(e){
+  var btn = e.target.closest(".split-opt");
+  if(!btn) return;
+  cost.twoWay = btn.getAttribute("data-tw") === "1";
+  saveRoster();
   renderSummary();
 });
 
@@ -3548,10 +3624,10 @@ var QR_PAY = {
 function openQrView(){
   var pay = payShares();
   var perWrap = document.getElementById("qrPerWrap"), note = document.getElementById("qrPerNote");
-  if(pay.byGames){
-    // หารตามเกม — คนละยอดไม่เท่ากัน ไม่มีตัวเลขเดียวให้โชว์ตรงนี้ ชี้กลับไปที่การ์ดกลุ่ม
+  if(pay.byRate){
+    // คิดตามอัตรา — คนละยอดไม่เท่ากัน ไม่มีตัวเลขเดียวให้โชว์ตรงนี้ ชี้กลับไปที่การ์ดกลุ่ม
     perWrap.hidden = true;
-    note.textContent = "หารตามเกมที่ลง — ยอดต่อคนไม่เท่ากัน ดูยอดของคุณจากการ์ดกลุ่มด้านบน";
+    note.textContent = "คิดตามอัตรา — ยอดต่อคนไม่เท่ากัน ดูยอดของคุณจากการ์ดกลุ่มด้านบน";
   } else {
     var ids = Object.keys(pay.map);
     var amt = ids.length ? pay.map[ids[0]] : 0;
@@ -3607,7 +3683,11 @@ window.__bq = {
   setLevel:setLevel, levelOf:levelOf, openLevelPicker:openLevelPicker, closeLevelPicker:closeLevelPicker,
   pendingLevels:function(){ return pendingLevels; },
   fetchRoster:fetchRoster, pushRoster:pushRoster, remote:function(){ return remoteState; },
-  setCost:function(o){ cost = { total:o.total||0 }; renderSummary(); },
+  setCost:function(o){
+    cost = defaultCost();
+    if(o) for(var k in o) cost[k] = o[k];
+    renderSummary();
+  },
   payShares:payShares,
   showScreen:showScreen, render:render, snapshot:snapshot, applySnapshot:applySnapshot,
   newSession:newSession, storageOK:function(){ return storageOK; },
@@ -3635,7 +3715,7 @@ window.__bq = {
   loadRoster();
   fillLevelSelect();
   renderPlan();                              // ยังไม่รู้ว่ามีนัดไหม — โชว์เวลาประจำไปก่อน
-  cost = { total:0 };
+  cost = defaultCost();
 
   if(!isAdmin){ startViewer(); return; }     // เปิดลิงก์เฉยๆ = จอดูสด
 
