@@ -4,8 +4,11 @@
     {
       "name": "badminton",
       "runtimeExecutable": "node",
-      "runtimeArgs": [".claude/serve.js"],
-      "port": 5173
+      "runtimeArgs": [
+        ".claude/serve.js"
+      ],
+      "port": 5173,
+      "autoPort": true
     }
   ]
 }

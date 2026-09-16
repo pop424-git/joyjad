@@ -8,12 +8,21 @@
 const KEY = "badminton:state";
 const PLAN_KEY = "badminton:plan";
 const ADMIN_KEY = "badminton:admins";
+// One key per ended session (keyed by sessionStartedAt). A device that missed the
+// end still holds that session and can push it back -- without this the server
+// can't tell a stale push from a live one, so the ended session reappears or
+// overwrites the new one another admin just started.
+const ENDED_PREFIX = "badminton:ended:";
+// ก๊วนก่อนหน้าล่าสุด (แค่ 1 ก๊วน) — เก็บคนละคีย์จาก state หลักโดยตั้งใจ ไม่งั้นตอนจบก๊วน
+// (action "clear" ที่ DEL คีย์ state) จะพา snapshot สุดท้ายที่เพิ่งเก็บไว้หายไปด้วยพร้อมกัน
+const PREV_KEY = "badminton:prevlog";
+const PREV_TTL_SECONDS = 7 * 24 * 60 * 60;   // ดูย้อนหลังได้ประมาณหนึ่งสัปดาห์ ยาวกว่า state หลัก (5 ชม.) มาก
 const MAX_BYTES = 40000;
 const SESSION_MAX_MS = 300 * 60 * 1000;   // ก๊วนเกิน 5 ชม. = ลืมปิด ทิ้งเอง
 const TTL_SECONDS = Math.ceil(SESSION_MAX_MS / 1000);
 const ADMIN_WINDOW_MS = 150000;   // แอดมินต่ออายุทุก 60 วิ — เผื่อพลาดได้ 1 รอบก่อนหลุดจากจำนวน
 const PLAN_MAX_AHEAD_MS = 30 * 24 * 60 * 60 * 1000;   // กัน expiresAt เพี้ยนมาค้างยาว
-const PLAN_MAX_COURTS = 4;
+const PLAN_MAX_COURTS = 6;
 const PLAN_TOTAL_COURTS = 6;
 const PLAN_MAX_PLAYERS = 60;
 
@@ -49,6 +58,11 @@ async function pipeline(c, commands) {
 function cleanId(raw) {
   const s = String(raw == null ? "" : raw).replace(/[^A-Za-z0-9_-]/g, "").slice(0, 40);
   return s || null;
+}
+
+function sessionId(raw) {
+  const n = Number(raw);
+  return isFinite(n) && n > 0 ? Math.floor(n) : null;
 }
 
 function readBody(req) {
@@ -99,6 +113,43 @@ function cleanPlan(raw) {
   };
 }
 
+// ก๊วนก่อนหน้าเป็นแค่ log อ่านย้อนหลัง ไม่กระทบสถานะการเล่นจริง เลยไม่ต้อง validate ละเอียดเท่า
+// cleanPlan — แค่กันขนาด/จำนวนเรคอร์ดบวมเกิน (คนละก๊วนจริง ก็ไม่ควรมีแมตช์เป็นร้อยอยู่ดี)
+const PREV_MAX_MATCHES = 300;
+const PREV_MAX_STYLE = 200;
+
+function cleanPrevLog(raw) {
+  if (!raw || typeof raw !== "object") return null;
+  // names ไม่ ids — ก๊วนถัดไปแจก player id เริ่มจาก 1 ใหม่เสมอ ชื่อต้องถูก freeze ไว้ตั้งแต่ตอนเก็บ
+  // (ดู resetSessionLocal ฝั่ง client) ไม่งั้น id เดิมจะไปตรงกับคนละคนในก๊วนที่กำลังเล่นอยู่
+  const matches = (Array.isArray(raw.matches) ? raw.matches : [])
+    .filter((m) => m && Array.isArray(m.names))
+    .slice(0, PREV_MAX_MATCHES)
+    .map((m) => ({
+      n: Number(m.n) || 0,
+      court: text(m.court, 10),
+      at: Number(m.at) || 0,
+      names: m.names.slice(0, 8).map((x) => text(x, 20)),
+      levels: Array.isArray(m.levels) ? m.levels.slice(0, 8).map((x) => text(x, 6)) : undefined,
+    }));
+  const styleLog = (Array.isArray(raw.styleLog) ? raw.styleLog : [])
+    .filter((e) => e && e.kind)
+    .slice(0, PREV_MAX_STYLE)
+    .map((e) => ({
+      at: Number(e.at) || 0,
+      kind: text(e.kind, 10),
+      style: text(e.style, 10),
+      names: Array.isArray(e.names) ? e.names.slice(0, 8).map((x) => text(x, 20)) : undefined,
+    }));
+  if (!matches.length && !styleLog.length) return null;   // ก๊วนที่ไม่มีอะไรให้ดูย้อนหลัง ไม่ต้องเก็บ
+  return {
+    startedAt: Number(raw.startedAt) || null,
+    endedAt: Number(raw.endedAt) || Date.now(),
+    rotate: raw.rotate === 4 ? 4 : 2,
+    matches, styleLog,
+  };
+}
+
 module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
 
@@ -116,8 +167,11 @@ module.exports = async (req, res) => {
       // check in, so a plain viewer poll costs exactly 1 command (the MGET).
       // A request carries admin=1 only when the tab is in admin mode.
       const wantAdmin = !!(req.query && String(req.query.admin) === "1" && id);
+      // ก๊วนก่อนหน้าแทบไม่เปลี่ยนระหว่างก๊วน (เปลี่ยนแค่ตอนเริ่มก๊วนใหม่) — ไม่ดึงทุก poll (ทุก 2-3 วิ
+      // ตลอดก๊วน) ให้ opt-in ด้วย query param เฉพาะตอนเปิดชีต match log จริง ๆ
+      const wantPrev = !!(req.query && String(req.query.prevlog) === "1");
       const now = Date.now();
-      const cmds = [["MGET", KEY, PLAN_KEY]];
+      const cmds = [["MGET", KEY, PLAN_KEY].concat(wantPrev ? [PREV_KEY] : [])];
       let cardAt = -1;
       if (wantAdmin) {
         cmds.push(["ZADD", ADMIN_KEY, now, id]);
@@ -135,7 +189,7 @@ module.exports = async (req, res) => {
       const out = await pipeline(c, cmds);
 
       const pair = (out[0] && out[0].result) || [];
-      const raw = pair[0], planRaw = pair[1];
+      const raw = pair[0], planRaw = pair[1], prevRaw = wantPrev ? pair[2] : undefined;
 
       // Left undefined on a viewer poll so it drops out of the JSON and the
       // client keeps the count it already has instead of blinking to zero.
@@ -159,7 +213,14 @@ module.exports = async (req, res) => {
         plan = null;
         redis(c, ["DEL", PLAN_KEY]).catch(() => {});
       }
-      res.status(200).json({ ok: true, state, online, plan });
+      // Left undefined (not null) when not requested, same reasoning as `online` above --
+      // the client keeps whatever it already has instead of blinking empty on every poll.
+      let prevLog;
+      if (wantPrev) {
+        prevLog = null;
+        if (prevRaw) { try { prevLog = JSON.parse(prevRaw); } catch (e) { prevLog = null; } }
+      }
+      res.status(200).json({ ok: true, state, online, plan, prevLog });
       return;
     }
 
@@ -167,7 +228,23 @@ module.exports = async (req, res) => {
       const body = readBody(req);
 
       if (body.action === "clear") {
-        await redis(c, ["DEL", KEY]);
+        // Tombstone before DEL: a set racing in between is either refused by the
+        // tombstone or wiped by the DEL, never left standing.
+        const sid = sessionId(body.session);
+        if (sid) await pipeline(c, [["SET", ENDED_PREFIX + sid, "1", "EX", TTL_SECONDS], ["DEL", KEY]]);
+        else await redis(c, ["DEL", KEY]);
+        res.status(200).json({ ok: true });
+        return;
+      }
+
+      // ผู้จัดกด "เริ่มก๊วนใหม่" — เก็บสำเนา match log ของก๊วนที่เพิ่งจบไว้คนละคีย์จาก state หลัก
+      // (ดู PREV_KEY ด้านบน) ทับก๊วนก่อนหน้าที่เก็บไว้เดิมเสมอ (เก็บแค่ 1 ก๊วนล่าสุดตามที่ตกลงกัน)
+      if (body.action === "setPrev") {
+        const prev = cleanPrevLog(body.prev);
+        if (!prev) { res.status(400).json({ ok: false, reason: "bad-prev" }); return; }
+        const str = JSON.stringify(prev);
+        if (str.length > MAX_BYTES) { res.status(413).json({ ok: false, reason: "too-large" }); return; }
+        await redis(c, ["SET", PREV_KEY, str, "EX", PREV_TTL_SECONDS]);
         res.status(200).json({ ok: true });
         return;
       }
@@ -187,6 +264,13 @@ module.exports = async (req, res) => {
         // own clocks can sit seconds apart, so the write time has to come from here
         // -- with a client stamp the phone that runs fast would always look newest
         // and the other one's edits would never be picked up.
+        // An ended (or expired) session is never written back -- 409 tells the
+        // sender its session is over so it clears itself instead of retrying.
+        const sid = sessionId(body.state.sessionStartedAt || body.state.savedAt);
+        if (sid && (Date.now() - sid > SESSION_MAX_MS || await redis(c, ["EXISTS", ENDED_PREFIX + sid]))) {
+          res.status(409).json({ ok: false, reason: "ended" });
+          return;
+        }
         const stamped = Object.assign({}, body.state, { srvAt: Date.now() });
         const str = JSON.stringify(stamped);
         if (str.length > MAX_BYTES) { res.status(413).json({ ok: false, reason: "too-large" }); return; }
