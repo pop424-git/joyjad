@@ -167,10 +167,10 @@
      ปุ่มเป็นสีเบียร์ตามโลโก้ — เด่นบนพื้นเขียว และไม่ไปซ้ำกับปุ่ม "ถัดไป" สีเขียวด้านล่าง */
   body:not(.viewer) #scSetup .hero-meta:not(:has(.plan-card)){ display:none; }
   body:not(.viewer) #scSetup .plan-edit{
-    background:var(--beer); border-color:var(--beer-dark); color:var(--accent);
+    background:#fff; border-color:#fff; color:var(--accent);
     font-weight:800; font-size:var(--fs-sm); padding:clamp(9px,1.2vh,14px) clamp(16px,2vw,26px);
   }
-  body:not(.viewer) #scSetup .plan-edit:active{ background:var(--beer-dark); border-color:var(--beer-dark); }
+  body:not(.viewer) #scSetup .plan-edit:active{ background:var(--accent-soft); border-color:var(--accent-soft); }
   .hero:has(.plan-card) .plan-edit{
     position:absolute; top:clamp(8px,1.4vh,16px); right:clamp(8px,1.4vw,16px);
     margin:0; padding:6px 11px; font-size:var(--fs-xs); background:rgba(255,255,255,.92);
@@ -1755,34 +1755,6 @@
     #playCourts[data-n="6"] .btn-end{ height:auto; }
   }
 
-  /* ---------- โหมดแอดมิน: ปุ่ม 🔐 + numpad ใส่รหัส ---------- */
-  /* ไม่ใช้ .icon-btn เพราะกฎ body.viewer ซ่อนปุ่มบนหัวจอตอนดูสด — ปุ่มนี้ต้องเห็นทุกคน */
-  .admin-key{
-    background:rgba(255,255,255,.14); border:1px solid rgba(255,255,255,.24);
-    color:#fff; border-radius:999px; cursor:pointer; line-height:1; flex:0 0 auto;
-    padding:clamp(6px,.9vh,10px) clamp(9px,1.1vw,14px); font-size:var(--fs-sm);
-    touch-action:manipulation; -webkit-user-select:none; user-select:none;
-  }
-  .admin-key:active{ background:rgba(255,255,255,.3); }
-  /* หน้าแรก: ลอยใต้โลโก้ในก้อน .hero-id — พื้น hero เขียวเหมือนหัวจอเล่น ใช้สีชุดเดียวกันได้ */
-  .hero-id .admin-key{ opacity:.8; }
-  /* หน้าจัดก๊วน: อยู่ใน h1 ต่อจากชื่อก๊วน — ผูกขนาดกับ h1 (em) ไม่ใช่ --fs-sm จะได้ย่อตามหัวจอ */
-  #scPlay header h1 .admin-key{ margin-left:.35em; vertical-align:middle; font-size:.5em; padding:.5em .65em; }
-  /* มือถือแนวตั้ง: หัวจอเป็นแถวเดียวห้ามตกบรรทัด และเต็มความกว้างอยู่แล้ว
-     ปุ่มนี้จึงเหลือแค่ตัวไอคอน ไม่มีกรอบ ไม่งั้นไปเบียดปุ่ม "สิ้นสุดก๊วน" จนตกขอบ */
-  @media (orientation:portrait) and (max-width:759px){
-    #scPlay header h1 .admin-key{
-      background:none; border:0; margin-left:.22em; font-size:.62em; padding:4px 2px;
-    }
-    #scPlay header h1 .admin-key:active{ background:none; opacity:.55; }
-  }
-
-  /* ---------- ป๊อปอัปยืนยันออกจากโหมดแอดมิน ---------- */
-  .pin-drawer{ width:min(360px,100%); text-align:center; }
-  .pin-drawer h2{ margin-bottom:3px; }
-  .pin-sub{ font-size:var(--fs-xs); color:var(--muted); margin:0 0 clamp(8px,1.6vh,14px); }
-  .pin-foot{ margin-top:clamp(6px,1.2vh,12px); display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
-  .pin-foot .btn{ flex:1 1 auto; }
 </style>
 </head>
 <body>
@@ -1795,8 +1767,6 @@
         <!-- โลโก้กับสโลแกนเป็นก้อนเดียว — จอแนวนอนย้ายไปอยู่คอลัมน์ซ้าย -->
         <div class="hero-id">
           <h1 class="logo"><img id="logoImg" alt="จอยจัด"></h1>
-          <!-- ทางเข้าโหมดแอดมิน — เห็นทุกคน แต่ต้องใส่รหัสถึงเข้าได้ (ปุ่มลับแตะโลโก้ 15 ครั้งยังใช้ได้อยู่) -->
-          <button type="button" class="admin-key" id="adminKeyHome" aria-label="โหมดแอดมิน">🔐</button>
         </div>
         <!-- มีนัดที่แอดมินตั้งไว้ = การ์ดนัด, ไม่มี = เวลาประจำของก๊วน (เติมโดย renderPlan) -->
         <div class="hero-meta" id="heroMeta"></div>
@@ -1854,7 +1824,7 @@
   <!-- ============ PLAY ============ -->
   <section class="screen" id="scPlay">
     <header>
-      <h1>จอยจัด<span class="r"> 🏸</span><button type="button" class="admin-key" id="adminKeyPlay" aria-label="โหมดแอดมิน">🔐</button></h1>
+      <h1>จอยจัด<span class="r"> 🏸</span></h1>
       <div class="header-btns">
         <!-- จำนวนแอดมินที่คุมก๊วนอยู่ — โชว์เป็นตัวเลขล้วน ไม่ห่อ span เพราะบนมือถือ
              .savechip span:not(.dot) ถูกซ่อนทั้งหมด (ชิปนี้ไม่มี .dot) -->
@@ -2026,17 +1996,6 @@
 </div>
 
 
-<!-- ใส่รหัสเข้าโหมดแอดมิน — ครบ 4 หลักเช็คทันที ไม่ต้องกดยืนยัน -->
-<div class="overlay" id="adminOutOverlay">
-  <div class="drawer pin-drawer">
-    <h2>ออกจากโหมดแอดมิน?</h2>
-    <p class="pin-sub">ออกแล้วหน้านี้จะกลับเป็นจอดูสด แก้อะไรไม่ได้ · เข้าใหม่ได้ด้วยการแตะโลโก้ 5 ครั้ง</p>
-    <div class="pin-foot">
-      <button class="btn btn-main" id="adminOutYes">ออกจากโหมดแอดมิน</button>
-      <button class="btn btn-ghost" id="adminOutNo">ไม่ออก</button>
-    </div>
-  </div>
-</div>
 
 <div id="callout"><div class="co-card">
   <div class="co-court" id="coCourt"></div>
@@ -2658,20 +2617,6 @@ function toggleAdmin(){
   setTimeout(function(){ location.reload(); }, 650);
 }
 
-/* ปุ่ม 🔐/🔓 — ยังไม่ใช่แอดมินก็เข้าเลย ไม่มีรหัส (จอยจัดคุมเครื่องเดียว ไม่ต้องกันคนอื่น),
-   เป็นแอดมินอยู่ก็ถามยืนยันก่อนออก */
-function adminKeyTap(){
-  if(isAdmin) document.getElementById("adminOutOverlay").classList.add("show");
-  else toggleAdmin();
-}
-function paintAdminKeys(){
-  var keys = document.querySelectorAll(".admin-key"), i;
-  for(i = 0; i < keys.length; i++){
-    keys[i].textContent = isAdmin ? "🔓" : "🔐";
-    keys[i].setAttribute("aria-label", isAdmin ? "ออกจากโหมดแอดมิน" : "เข้าโหมดแอดมิน");
-    keys[i].title = isAdmin ? "ออกจากโหมดแอดมิน" : "เข้าโหมดแอดมิน";
-  }
-}
 /* กดค้าง 7 วิที่ชื่อก๊วน (จอดูสดเท่านั้น) = เข้า/ออกโหมดผู้ช่วยจัดก๊วน — จำไว้ข้าม refresh */
 function toggleHelper(){
   isHelper = !isHelper;
@@ -5987,30 +5932,17 @@ function startViewer(){
 }
 
 /* ================= events ================= */
-/* ปุ่มลับ: แตะโลโก้ 15 ครั้งรวดใน 5 วิ = สลับโหมดแอดมินตรง ๆ ไม่ต้องใส่รหัส
-   (ทางเข้าปกติคือปุ่ม 🔐 ที่ต้องใส่รหัส — อันนี้เก็บไว้เป็นทางลัดของคนตั้งระบบ) */
+/* ทางเข้าเดียวของโหมดแอดมิน: แตะโลโก้ (หรือชื่อก๊วนบนหัวจอเล่น) 5 ครั้งใน 2.5 วิ
+   แตะชุดเดิมอีกรอบ = ออก — ไม่มีปุ่ม ไม่มีรหัส คนดูสดไม่รู้ว่ามีทางเข้า */
 var TAPS_FOR_ADMIN = 5, TAP_WINDOW_MS = 2500;
 var tapTimes = [];
 document.addEventListener("click", function(e){
-  if(e.target.closest(".admin-key")) return;   // ปุ่ม 🔐 อยู่ใน h1 หน้าเล่น — กดปุ่มต้องไม่ไปนับเป็นแตะโลโก้
   var z = e.target.closest(".brand .logo, #scPlay header h1");
   if(!z) return;
   var now = Date.now();
   tapTimes = tapTimes.filter(function(t){ return now - t < TAP_WINDOW_MS; });
   tapTimes.push(now);
   if(tapTimes.length >= TAPS_FOR_ADMIN){ tapTimes = []; toggleAdmin(); }
-});
-
-/* ปุ่ม 🔐/🔓 ทั้งสองหน้า + แป้นรหัส + ป๊อปอัปยืนยันออกจากโหมดแอดมิน */
-document.addEventListener("click", function(e){
-  if(e.target.closest(".admin-key")){ adminKeyTap(); return; }
-  if(e.target.id === "adminOutNo" || e.target.id === "adminOutOverlay"){
-    document.getElementById("adminOutOverlay").classList.remove("show"); return;
-  }
-  if(e.target.id === "adminOutYes"){
-    document.getElementById("adminOutOverlay").classList.remove("show");
-    toggleAdmin();
-  }
 });
 
 /* กดค้าง 7 วิที่ชื่อก๊วนหน้าเล่น (จอดูสดเท่านั้น) = เข้า/ออกโหมดผู้ช่วยจัดก๊วน
@@ -6025,12 +5957,10 @@ var HELPER_HOLD_MS = 7000, HELPER_MOVE_TOL = 12;
     timer = setTimeout(function(){ timer = null; toggleHelper(); }, HELPER_HOLD_MS);
   }
   document.addEventListener("mousedown", function(e){
-    if(e.target.closest(".admin-key")) return;   // กดปุ่ม 🔐 ค้างต้องไม่เผลอเข้าโหมดผู้ช่วย
     if(!e.target.closest("#scPlay header h1")) return;
     arm(e.clientX, e.clientY);
   });
   document.addEventListener("touchstart", function(e){
-    if(e.target.closest(".admin-key")) return;
     if(!e.target.closest("#scPlay header h1")) return;
     var pt = e.touches[0];
     arm(pt.clientX, pt.clientY);
@@ -6443,7 +6373,6 @@ window.__bq = {
   showScreen:showScreen, render:render, snapshot:snapshot, applySnapshot:applySnapshot,
   newSession:newSession, storageOK:function(){ return storageOK; },
   isAdmin:function(){ return isAdmin; }, pollState:pollState, startViewer:startViewer,
-  adminKeyTap:adminKeyTap,
   isHelper:function(){ return isHelper; }, toggleHelper:toggleHelper, helperEndGame:helperEndGame,
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
@@ -6471,7 +6400,6 @@ window.__bq = {
 /* ================= boot ================= */
 (function boot(){
   document.getElementById("logoImg").src = LOGO;
-  paintAdminKeys();           // ปุ่ม 🔐/🔓 ต้องสะท้อนโหมดปัจจุบันตั้งแต่เปิดหน้า (จอดูสดก็เห็น ต้องอยู่ก่อน startViewer)
   loadRoster();
   paintCalloutBtn();          // สะท้อนค่าที่โหลดมา (หรือค่าเริ่มต้น "เปิด") ตั้งแต่เปิดแอป
   loadPrevSession();
