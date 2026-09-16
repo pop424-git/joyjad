@@ -1777,44 +1777,12 @@
     #scPlay header h1 .admin-key:active{ background:none; opacity:.55; }
   }
 
-  /* ---------- numpad ---------- */
+  /* ---------- ป๊อปอัปยืนยันออกจากโหมดแอดมิน ---------- */
   .pin-drawer{ width:min(360px,100%); text-align:center; }
   .pin-drawer h2{ margin-bottom:3px; }
   .pin-sub{ font-size:var(--fs-xs); color:var(--muted); margin:0 0 clamp(8px,1.6vh,14px); }
-  .pin-dots{ display:flex; justify-content:center; gap:clamp(10px,2.2vw,16px); margin:0 0 clamp(8px,1.6vh,14px); }
-  .pin-dots i{
-    width:clamp(13px,2.6vh,18px); height:clamp(13px,2.6vh,18px); border-radius:50%;
-    border:2px solid var(--border); display:block;
-  }
-  .pin-dots i.on{ background:var(--accent); border-color:var(--accent); }
-  .pin-dots.bad i{ border-color:var(--out); background:transparent; }
-  /* ปุ่มเลขสูงตาม vh — จอเตี้ยย่อเอง จอสูงได้ปุ่มใหญ่กดด้วยนิ้วโป้งสบาย */
-  .pin-pad{ display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(6px,1.2vh,11px); }
-  .pin-key{
-    background:var(--panel2); border:1px solid var(--border); color:var(--text);
-    border-radius:12px; cursor:pointer; font-weight:800; touch-action:manipulation;
-    min-height:clamp(42px,8.5vh,64px); font-size:clamp(20px,3.4vh,30px);
-    font-variant-numeric:tabular-nums; -webkit-user-select:none; user-select:none;
-  }
-  .pin-key:active{ background:var(--accent-soft); }
-  .pin-key.fn{ font-size:clamp(16px,2.6vh,22px); }
-  .pin-pad.locked .pin-key{ opacity:.35; pointer-events:none; }
-  .pin-err{ min-height:1.35em; margin:clamp(6px,1.2vh,10px) 0 0; font-size:var(--fs-xs); font-weight:800; color:var(--out); }
   .pin-foot{ margin-top:clamp(6px,1.2vh,12px); display:flex; flex-wrap:wrap; gap:8px; justify-content:center; }
   .pin-foot .btn{ flex:1 1 auto; }
-  @keyframes pinShake{ 10%,90%{ transform:translateX(-2px); } 30%,70%{ transform:translateX(4px); } 50%{ transform:translateX(-5px); } }
-  .pin-shake{ animation:pinShake .3s; }
-  /* จอเตี้ยแนวนอน (มือถือ/แท็บเล็ตตะแคง): 4 แถวเรียงลงมาแล้วล้นจอ — แยกสองคอลัมน์ ข้อความซ้าย แป้นขวา */
-  @media (orientation:landscape) and (max-height:560px){
-    .pin-drawer{ width:min(560px,100%); text-align:left; padding:12px 14px; }
-    .pin-body{ display:grid; grid-template-columns:1fr 1fr; gap:clamp(10px,2.5vw,20px); align-items:center; }
-    .pin-dots{ justify-content:flex-start; }
-    .pin-key{ min-height:clamp(34px,11.5vh,50px); font-size:clamp(17px,4.4vh,24px); }
-    .pin-drawer h2{ font-size:var(--fs-md); }
-    .pin-sub{ margin-bottom:8px; }
-    .pin-err{ margin-top:6px; }
-    .pin-foot{ margin-top:8px; }
-  }
 </style>
 </head>
 <body>
@@ -1873,16 +1841,6 @@
         <input id="newRosterName" placeholder="เพิ่มชื่อใหม่" maxlength="20" autocomplete="off">
         <select id="newRosterLevel" aria-label="ระดับฝีมือ"></select>
         <button class="btn btn-main" id="btnAddRoster">เพิ่ม</button>
-      </div>
-      <!-- ซ้อมแข่ง — คู่ที่ล็อกไว้ให้ลงด้วยกันตลอด ตั้งที่นี่ที่เดียว แล้วใช้ได้ทั้งคืนและก๊วนถัด ๆ ไป -->
-      <div class="trainrow">
-        <button class="btn btn-ghost" id="btnTrain">⇄ ซ้อมแข่ง</button>
-        <div class="trainlist" id="trainList"></div>
-      </div>
-      <!-- อยากปะทะ — ขอตีคนละฝั่งกับคนนี้ 1 เกม (ของก๊วนวันนี้เท่านั้น · โหมด 4 ออก 4) -->
-      <div class="trainrow">
-        <button class="btn btn-ghost" id="btnDuel">⚔ อยากปะทะ</button>
-        <div class="trainlist" id="duelList"></div>
       </div>
       <div class="chip-grid" id="rosterGrid"></div>
     </div>
@@ -2020,29 +1978,12 @@
         <input id="newName" placeholder="เพิ่มคนมาสาย" maxlength="20" autocomplete="off">
         <button class="btn btn-main" id="btnAdd">เพิ่ม</button>
       </div>
-      <!-- ตั้ง/เลิกคู่ซ้อมกลางก๊วนได้ด้วย — หน้าเดียวกับปุ่มซ้อมแข่งที่หน้ารายชื่อ -->
-      <button class="btn btn-ghost" id="btnTrainManage">⇄ ซ้อมแข่ง</button>
-      <button class="btn btn-ghost" id="btnDuelManage">⚔ อยากปะทะ</button>
       <button class="close-drawer" id="btnCloseManage">ปิด</button>
     </div>
   </div>
 </div>
 
 <!-- ซ้อมแข่ง: จับคู่ที่จะอยู่ด้วยกันตลอด — เปิดจากปุ่ม "ซ้อมแข่ง" หน้ารายชื่อ -->
-<div class="overlay" id="pairOverlay">
-  <div class="drawer wide">
-    <h2 id="pairTitle">ซ้อมแข่ง</h2>
-    <p class="sub" id="pairSub">แตะเลือกทีละ 2 คน = 1 คู่ · คู่ซ้อมจะได้ลงสนามพร้อมกัน อยู่ฝั่งเดียวกันตลอด และเจอฝั่งตรงข้ามที่เฉลี่ยแล้วไม่ต่ำกว่าระดับกลางของคู่ (ไม่ลงตัวปัดขึ้น) · ตั้งได้หลายคู่</p>
-    <div class="plist-label">คู่ที่ตั้งไว้</div>
-    <div class="plist" id="pairList"></div>
-    <div class="plist-label">แตะเลือกคนเข้าคู่</div>
-    <div class="chip-grid" id="pairGrid"></div>
-    <div class="drawer-foot">
-      <button class="close-drawer" id="btnClosePair">ปิด</button>
-    </div>
-  </div>
-</div>
-
 <div class="overlay" id="planOverlay">
   <div class="drawer wide">
     <h2>นัดครั้งถัดไป</h2>
@@ -2086,42 +2027,10 @@
 
 
 <!-- ใส่รหัสเข้าโหมดแอดมิน — ครบ 4 หลักเช็คทันที ไม่ต้องกดยืนยัน -->
-<div class="overlay" id="pinOverlay">
-  <div class="drawer pin-drawer">
-    <!-- หัวข้อ/จุด อยู่ในคอลัมน์เดียวกับแป้น — จอเตี้ยแนวนอนจะได้จัดเป็นสองคอลัมน์ได้เลย -->
-    <div class="pin-body">
-      <div>
-        <h2>โหมดแอดมิน</h2>
-        <p class="pin-sub">ใส่รหัส 4 หลัก</p>
-        <div class="pin-dots" id="pinDots"><i></i><i></i><i></i><i></i></div>
-        <div class="pin-err" id="pinErr"></div>
-      </div>
-      <div>
-        <div class="pin-pad" id="pinPad">
-          <button type="button" class="pin-key" data-pin="1">1</button>
-          <button type="button" class="pin-key" data-pin="2">2</button>
-          <button type="button" class="pin-key" data-pin="3">3</button>
-          <button type="button" class="pin-key" data-pin="4">4</button>
-          <button type="button" class="pin-key" data-pin="5">5</button>
-          <button type="button" class="pin-key" data-pin="6">6</button>
-          <button type="button" class="pin-key" data-pin="7">7</button>
-          <button type="button" class="pin-key" data-pin="8">8</button>
-          <button type="button" class="pin-key" data-pin="9">9</button>
-          <button type="button" class="pin-key fn" data-pinclear="1">ล้าง</button>
-          <button type="button" class="pin-key" data-pin="0">0</button>
-          <button type="button" class="pin-key fn" data-pindel="1">⌫</button>
-        </div>
-        <div class="pin-foot"><button class="btn btn-ghost" id="pinCancel">ยกเลิก</button></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- ยืนยันก่อนออกจากโหมดแอดมิน — กันมือลั่นกลางก๊วน -->
 <div class="overlay" id="adminOutOverlay">
   <div class="drawer pin-drawer">
     <h2>ออกจากโหมดแอดมิน?</h2>
-    <p class="pin-sub">ออกแล้วหน้านี้จะกลับเป็นจอดูสด แก้อะไรไม่ได้ · เข้าใหม่ได้ด้วยรหัสเดิม</p>
+    <p class="pin-sub">ออกแล้วหน้านี้จะกลับเป็นจอดูสด แก้อะไรไม่ได้ · เข้าใหม่ได้ด้วยการแตะโลโก้ 5 ครั้ง</p>
     <div class="pin-foot">
       <button class="btn btn-main" id="adminOutYes">ออกจากโหมดแอดมิน</button>
       <button class="btn btn-ghost" id="adminOutNo">ไม่ออก</button>
@@ -2346,14 +2255,9 @@ function pairMateRid(rid){
   if(i < 0) return null;
   return trainPairs[i][0] === rid ? trainPairs[i][1] : trainPairs[i][0];
 }
-function addTrainPair(a, b){
-  if(!a || !b || a === b) return false;
-  if(!personById(a) || !personById(b)) return false;
-  if(pairIndexOf(a) >= 0 || pairIndexOf(b) >= 0) return false;   // คนหนึ่งอยู่ได้คู่เดียว
-  trainPairs.push([a, b]);
-  saveRoster();
-  return true;
-}
+/* ปิดไว้: จอยจัดไม่ใช้ซ้อมแข่ง — ทางเข้า UI ถอดออกแล้ว และกันไม่ให้ตั้งคู่ผ่านทางอื่นด้วย
+   (โค้ดจัดที่นั่ง/ถ่วงน้ำหนักคิวที่อ่าน trainPairs ยังอยู่ แต่กลายเป็น no-op เพราะลิสต์ว่างเสมอ) */
+function addTrainPair(){ return false; }
 /* ชุดคิวที่จัดไว้ก่อนหน้า (4 ออก 4) อาจมีคนในคู่ใหม่อยู่คนเดียว = ฉีกคู่ตั้งแต่ยังไม่ลงสนาม
    ตัดชุดแบบนั้นทิ้งแล้วปล่อยให้จัดใหม่ (กึ่งอัตโนมัติเติมกลับให้เอง) ดีกว่าปล่อยชุดที่ขัดกติกาคาคิวไว้
    คืนจำนวนชุดที่ตัดทิ้ง — ไว้บอกคนจัดว่าคิวที่จัดไว้หายไปเพราะอะไร */
@@ -2463,16 +2367,8 @@ function duelTag(rid){
   return i < 0 ? "" : '<span class="ptag dtag">⚔'+(i+1)+'</span>';
 }
 function duelText(d){ return nameOf(d[0]) + " + " + nameOf(d[1]) + " vs " + nameOf(d[2]) + " + " + nameOf(d[3]); }
-function addDuel(ids){
-  if(!Array.isArray(ids) || ids.length !== 4) return false;
-  var seen = {};
-  for(var i=0;i<4;i++){
-    if(!ids[i] || seen[ids[i]] || !personById(ids[i]) || duelIndexOf(ids[i]) >= 0) return false;
-    seen[ids[i]] = 1;
-  }
-  duels.push(ids.slice());
-  return true;
-}
+/* ปิดไว้เหมือนซ้อมแข่ง — ทีมปะทะตั้งไม่ได้แล้ว */
+function addDuel(){ return false; }
 function removeDuel(i){
   if(i < 0 || i >= duels.length) return;
   duels.splice(i, 1);
@@ -2762,83 +2658,6 @@ function toggleAdmin(){
   setTimeout(function(){ location.reload(); }, 650);
 }
 
-/* ---- numpad ใส่รหัสเข้าโหมดแอดมิน ----
-   รหัสอยู่ฝั่ง client เปิด view-source เห็นได้ — กันมือลั่น/คนทั่วไปเท่านั้น ไม่ใช่ security จริง
-   ผิด = ล็อกแป้น PIN_LOCK_MS แล้วลองใหม่ได้ (ไม่ต้องเปิดชีตใหม่) */
-var ADMIN_PIN = "4687", PIN_LEN = 4, PIN_LOCK_MS = 5000;
-var pinBuf = "", pinLockTimer = null, pinTickTimer = null;
-
-function paintPin(){
-  var dots = document.getElementById("pinDots");
-  if(!dots) return;
-  var cells = dots.children;
-  for(var i = 0; i < cells.length; i++) cells[i].classList.toggle("on", i < pinBuf.length);
-}
-function pinLocked(){ return pinLockTimer !== null; }
-function clearPinTimers(){
-  if(pinLockTimer){ clearTimeout(pinLockTimer); pinLockTimer = null; }
-  if(pinTickTimer){ clearInterval(pinTickTimer); pinTickTimer = null; }
-}
-function openPin(){
-  clearPinTimers();
-  pinBuf = "";
-  var dots = document.getElementById("pinDots"), pad = document.getElementById("pinPad");
-  if(dots) dots.classList.remove("bad");
-  if(pad) pad.classList.remove("locked");
-  document.getElementById("pinErr").textContent = "";
-  paintPin();
-  document.getElementById("pinOverlay").classList.add("show");
-}
-function closePin(){
-  clearPinTimers();
-  pinBuf = "";
-  document.getElementById("pinOverlay").classList.remove("show");
-}
-function pinWrong(){
-  var dots = document.getElementById("pinDots"), pad = document.getElementById("pinPad"),
-      err  = document.getElementById("pinErr"), drawer = document.querySelector("#pinOverlay .drawer");
-  pinBuf = "";
-  paintPin();
-  if(dots) dots.classList.add("bad");
-  if(pad) pad.classList.add("locked");
-  if(drawer){
-    drawer.classList.remove("pin-shake");
-    void drawer.offsetWidth;                 // บังคับ reflow ไม่งั้นสั่งสั่นซ้ำติด ๆ กันแล้วไม่เล่นอีก
-    drawer.classList.add("pin-shake");
-  }
-  var left = Math.round(PIN_LOCK_MS / 1000);
-  function tick(){ err.textContent = "รหัสไม่ถูก · ลองใหม่ได้ใน " + left + " วิ"; }
-  tick();
-  pinTickTimer = setInterval(function(){ left--; if(left > 0) tick(); }, 1000);
-  pinLockTimer = setTimeout(function(){
-    clearPinTimers();
-    err.textContent = "";
-    if(dots) dots.classList.remove("bad");
-    if(pad) pad.classList.remove("locked");
-  }, PIN_LOCK_MS);
-}
-function pinPush(d){
-  if(pinLocked() || pinBuf.length >= PIN_LEN) return;
-  pinBuf += d;
-  paintPin();
-  if(pinBuf.length < PIN_LEN) return;
-  var ok = pinBuf === ADMIN_PIN;
-  // หน่วงนิดให้จุดที่ 4 ทันวาด ก่อนตัดสิน (ไม่งั้นกดปุ๊บชีตหายปั๊บ ไม่เห็นว่าครบ)
-  setTimeout(function(){
-    if(ok){ closePin(); toggleAdmin(); }
-    else pinWrong();
-  }, 120);
-}
-function pinDel(){
-  if(pinLocked() || !pinBuf) return;
-  pinBuf = pinBuf.slice(0, -1);
-  paintPin();
-}
-function pinClear(){
-  if(pinLocked()) return;
-  pinBuf = "";
-  paintPin();
-}
 /* ปุ่ม 🔐/🔓 — ยังไม่ใช่แอดมินก็เข้าเลย ไม่มีรหัส (จอยจัดคุมเครื่องเดียว ไม่ต้องกันคนอื่น),
    เป็นแอดมินอยู่ก็ถามยืนยันก่อนออก */
 function adminKeyTap(){
@@ -2967,7 +2786,7 @@ function loadRoster(){
       });
     }
     /* คู่ซ้อมอยู่กับรายชื่อ ไม่ใช่กับก๊วนวันนี้ — ตั้งไว้ครั้งเดียวแล้วใช้ได้ทุกวันจนกว่าจะเลิกคู่ */
-    if(d && Array.isArray(d.pairs)) trainPairs = normPairs(d.pairs);
+    trainPairs = [];                 // ซ้อมแข่งปิดอยู่ — ไม่รับคู่ที่เครื่องอื่นเคยตั้งไว้
     if(d && d.rotate === 4){ rotateOut = 4; }
     if(d && typeof d.fc === "boolean") forecast.on = d.fc;
     if(d && typeof d.semi === "boolean") semiAuto = d.semi;
@@ -3573,9 +3392,9 @@ function applySnapshot(d){
   });
   pruneQueueSets();
   // คู่ซ้อมเป็นฟิลด์เสริม — snapshot เก่าที่ไม่มีไม่ต้องล้างคู่ที่เครื่องนี้ตั้งไว้ทิ้ง
-  if(Array.isArray(d.pairs)) trainPairs = normPairs(d.pairs);
+  trainPairs = [];                   // ซ้อมแข่งปิดอยู่ (ดู addTrainPair)
   // คู่ปะทะเป็นของก๊วนวันนี้ — snapshot ที่ไม่มี (ก๊วนเก่า) = ไม่มีคู่ปะทะ
-  duels = normDuels(d.duels);
+  duels = [];                        // ทีมปะทะปิดอยู่ (ดู addDuel)
   cost = normCost(d.cost);
   sessionStartedAt = d.sessionStartedAt || d.savedAt || Date.now();
   pending = null;
@@ -3716,127 +3535,6 @@ function renderTrainRow(){
              + esc(nameOf(pr[0]) + " + " + nameOf(pr[1])) + '</span>';
       }).join("")
     : '<span class="none">ยังไม่มีคู่ซ้อม</span>';
-}
-var pairDraft = null;                   // คนแรกที่แตะไว้ รอคนที่สองมาเข้าคู่
-/* หน้าจับคู่ใช้ร่วมกันสองแบบ: "train" = ซ้อมแข่ง (ฝั่งเดียวกัน ตลอด) · "duel" = อยากปะทะ (คนละฝั่ง 1 เกม) */
-var pairKind = "train";
-var duelDraft = [];                    // rid ที่แตะไว้ตามลำดับ ครบ 4 = ตั้งทีมปะทะ
-function openPairPicker(kind){
-  pairKind = kind === "duel" ? "duel" : "train";
-  pairDraft = null; duelDraft = [];
-  document.getElementById("pairTitle").textContent = pairKind === "duel" ? "อยากปะทะ" : "ซ้อมแข่ง";
-  document.getElementById("pairSub").textContent = pairKind === "duel"
-    ? "แตะ 4 คน = 1 เกมปะทะ (2 คนแรก = ทีมหนึ่ง · 2 คนหลัง = อีกทีม) · ตอนจัดคิวแตะชื่อใครใน 4 คนนี้ = ทั้ง 4 คนต่อท้ายคิวเป็นชุดใหม่ · เล่นจบ 1 เกมแล้วหายเอง · ใช้ได้เฉพาะโหมด 4 ออก 4"
-    : "แตะเลือกทีละ 2 คน = 1 คู่ · คู่ซ้อมจะได้ลงสนามพร้อมกัน อยู่ฝั่งเดียวกันตลอด และเจอฝั่งตรงข้ามที่เฉลี่ยแล้วไม่ต่ำกว่าระดับกลางของคู่ (ไม่ลงตัวปัดขึ้น) · ตั้งได้หลายคู่";
-  renderPairPicker();
-  document.getElementById("pairOverlay").classList.add("show");
-}
-function closePairPicker(){
-  pairDraft = null;
-  document.getElementById("pairOverlay").classList.remove("show");
-  if(phase === "pick") renderPick(); else render();
-  // เปิดมาจากป๊อปอัปจัดการรายชื่อกลางก๊วน — ป้ายคู่ในนั้นต้องเปลี่ยนตามทันที
-  var mo = document.getElementById("manageOverlay");
-  if(mo && mo.classList.contains("show")) renderManage();
-}
-function renderPairPicker(){
-  var list = document.getElementById("pairList");
-  if(!list) return;
-  var duel = pairKind === "duel";
-  var who = function(rid){ var r = personById(rid); return levelBadge(r ? r.level : "") + dispName(r ? r.name : "?"); };
-  var slot = function(k){ return duelDraft[k] ? who(duelDraft[k]) : '<i class="hint">ทีม ' + (k < 2 ? 1 : 2) + '</i>'; };
-  if(duel) list.innerHTML = duels.map(function(d, i){
-        return '<div class="pairrow">' + duelTag(d[0])
-             + '<span class="who">' + who(d[0]) + ' + ' + who(d[1]) + ' vs ' + who(d[2]) + ' + ' + who(d[3]) + '</span>'
-             + '<button class="x" data-pxd="'+i+'">✕</button></div>';
-      }).join("")
-    + (duelDraft.length
-        ? '<div class="pairrow"><span class="who">' + slot(0) + ' + ' + slot(1) + ' vs ' + slot(2) + ' + ' + slot(3) + '</span>'
-          + '<span class="hint">กำลังเลือก ' + duelDraft.length + '/4</span></div>'
-        : (duels.length ? '' : '<div class="empty-msg">ยังไม่มีทีมปะทะ — แตะ 4 คนข้างล่าง (2 คนแรก = ทีมหนึ่ง · 2 คนหลัง = อีกทีม)'
-          + (rotateOut === 4 ? '' : ' · ตอนนี้โหมด 2 ออก 2 ยังไม่มีผล') + '</div>'));
-  else list.innerHTML = trainPairs.length
-    ? trainPairs.map(function(pr, i){
-        var a = personById(pr[0]), b = personById(pr[1]);
-        return '<div class="pairrow">' + pairTag(pr[0])
-             + '<span class="who">' + levelBadge(a ? a.level : "") + dispName(a ? a.name : "?")
-             +   ' + ' + levelBadge(b ? b.level : "") + dispName(b ? b.name : "?") + '</span>'
-             + '<span class="hint">' + esc(pairFloorLabel(pr)) + '</span>'
-             + '<button class="x" data-pxd="'+i+'">✕</button></div>';
-      }).join("")
-    : '<div class="empty-msg">ยังไม่มีคู่ซ้อม — แตะเลือก 2 คนข้างล่างเพื่อจับคู่</div>';
-  // จับคู่ซ้อมได้เฉพาะคนที่มาวันนี้ (attending) — คนที่จำไว้แต่ยังไม่มาวันนี้ยังไม่รู้ว่าระดับล่าสุดตรงไหม
-  var here = {};
-  players.forEach(function(p){ if(p.attending) here[p.rid] = 1; });
-  var grid = document.getElementById("pairGrid"), rl = rosterSorted().filter(function(r){ return here[r.id]; });
-  grid.innerHTML = rl.length
-    ? rl.map(function(r){
-        var inPair = (duel ? duelIndexOf(r.id) : pairIndexOf(r.id)) >= 0;
-        var drafted = duel ? duelDraft.indexOf(r.id) >= 0 : pairDraft === r.id;
-        return '<div class="pchip'+(drafted ? " pairsel" : "")+(inPair ? " paired" : "")
-             + '" data-pd="'+esc(r.id)+'">'
-             + (duel ? duelTag(r.id) : pairTag(r.id)) + levelBadge(r.level)
-             + '<span class="nm">'+dispName(r.name)+'</span></div>';
-      }).join("")
-    : '<div class="empty-msg">วันนี้ยังไม่มีใครมา — เพิ่มชื่อที่หน้ารายชื่อก่อน</div>';
-}
-function togglePairPick(rid){
-  if(!personById(rid)) return;
-  if(pairKind === "duel"){ toggleDuelPick(rid); return; }
-  var at = pairIndexOf(rid);
-  if(at >= 0){                                  // อยู่ในคู่แล้ว — เลิกคู่ด้วยปุ่ม ✕ ด้านบนเท่านั้น
-    toast(nameOf(rid) + " อยู่คู่กับ " + nameOf(pairMateRid(rid)) + " แล้ว · กด ✕ ที่คู่ด้านบนเพื่อเลิกคู่");
-    return;
-  }
-  if(pairDraft === rid) pairDraft = null;       // แตะซ้ำ = ยกเลิกที่เลือกไว้
-  else if(!pairDraft || !personById(pairDraft)) pairDraft = rid;
-  else{
-    var first = pairDraft;
-    pairDraft = null;
-    if(addTrainPair(first, rid)){
-      // จับคู่กลางก๊วนได้ — คิวที่จัดไว้แล้วและฉีกคู่ใหม่ ถูกจัดใหม่ให้ตรงนี้
-      var gone = dropSetsSplittingPair(first, rid);
-      toast("คู่ซ้อม: " + nameOf(first) + " + " + nameOf(rid)
-            + (gone ? " · จัดคิวที่ฉีกคู่ใหม่ให้แล้ว " + gone + " ชุด" : ""));
-    }
-  }
-  renderPairPicker(); renderTrainRow();
-}
-function toggleDuelPick(rid){
-  if(duelIndexOf(rid) >= 0){
-    toast(nameOf(rid) + " อยู่ในทีมปะทะแล้ว · กด ✕ ที่ทีมด้านบนเพื่อยกเลิก");
-    return;
-  }
-  var at = duelDraft.indexOf(rid);
-  if(at >= 0) duelDraft.splice(at, 1);           // แตะซ้ำ = เอาออก
-  else duelDraft.push(rid);
-  if(duelDraft.length === 4){
-    var ids = duelDraft;
-    duelDraft = [];
-    if(addDuel(ids)){
-      var gone = dropSetsSplittingDuel(duels.length - 1);
-      save();
-      toast("⚔ " + duelText(ids) + (gone ? " · จัดคิวใหม่ให้แล้ว " + gone + " ชุด" : ""));
-    }
-  }
-  renderPairPicker(); renderTrainRow();
-}
-function dropTrainPair(i){
-  if(pairKind === "duel"){
-    var dp = duels[i];
-    if(!dp) return;
-    duelDraft = [];
-    removeDuel(i); save();
-    toast("ยกเลิกปะทะ " + duelText(dp));
-    renderPairPicker(); renderTrainRow();
-    return;
-  }
-  var pr = trainPairs[i];
-  if(!pr) return;
-  pairDraft = null;              // เลิกคู่แล้วเริ่มจับใหม่จากศูนย์ — คนที่ค้างเลือกไว้ก่อนหน้าไม่ไปโผล่คู่กับใครเอง
-  removeTrainPair(i);
-  toast("เลิกคู่ " + nameOf(pr[0]) + " + " + nameOf(pr[1]) + " แล้ว");
-  renderPairPicker(); renderTrainRow();
 }
 function togglePick(id){
   if(!personById(id)) return;
@@ -6306,11 +6004,6 @@ document.addEventListener("click", function(e){
 /* ปุ่ม 🔐/🔓 ทั้งสองหน้า + แป้นรหัส + ป๊อปอัปยืนยันออกจากโหมดแอดมิน */
 document.addEventListener("click", function(e){
   if(e.target.closest(".admin-key")){ adminKeyTap(); return; }
-  var k = e.target.closest("[data-pin]");
-  if(k){ pinPush(k.getAttribute("data-pin")); return; }
-  if(e.target.closest("[data-pindel]")){ pinDel(); return; }
-  if(e.target.closest("[data-pinclear]")){ pinClear(); return; }
-  if(e.target.id === "pinCancel" || e.target.id === "pinOverlay"){ closePin(); return; }
   if(e.target.id === "adminOutNo" || e.target.id === "adminOutOverlay"){
     document.getElementById("adminOutOverlay").classList.remove("show"); return;
   }
@@ -6318,13 +6011,6 @@ document.addEventListener("click", function(e){
     document.getElementById("adminOutOverlay").classList.remove("show");
     toggleAdmin();
   }
-});
-/* คีย์บอร์ด (iPad ต่อคีย์บอร์ด / เดสก์ท็อป) — พิมพ์เลขได้เลย ไม่ต้องจิ้มแป้นบนจอ */
-document.addEventListener("keydown", function(e){
-  if(!document.getElementById("pinOverlay").classList.contains("show")) return;
-  if(e.key >= "0" && e.key <= "9"){ pinPush(e.key); e.preventDefault(); }
-  else if(e.key === "Backspace"){ pinDel(); e.preventDefault(); }
-  else if(e.key === "Escape"){ closePin(); e.preventDefault(); }
 });
 
 /* กดค้าง 7 วิที่ชื่อก๊วนหน้าเล่น (จอดูสดเท่านั้น) = เข้า/ออกโหมดผู้ช่วยจัดก๊วน
@@ -6407,16 +6093,6 @@ document.addEventListener("click", function(e){
     e.stopPropagation();
     var rid = t.getAttribute("data-rx"), rrec = personById(rid);
     if(rrec && confirm("ลบ " + rrec.name + " ออกจากรายชื่อที่จำไว้?")){ rosterRemove(rid); renderPick(); }
-    return;
-  }
-  if(t.hasAttribute("data-pxd")){                      // เลิกคู่ซ้อม (ต้องเช็คก่อน data-pd)
-    e.stopPropagation();
-    dropTrainPair(+t.getAttribute("data-pxd"));
-    return;
-  }
-  if(t.hasAttribute("data-pd")){                       // แตะชื่อในหน้าซ้อมแข่ง = จับคู่
-    e.stopPropagation();
-    togglePairPick(t.getAttribute("data-pd"));
     return;
   }
   if(t.hasAttribute("data-lp")){                       // เลือกระดับใน popup
@@ -6649,12 +6325,6 @@ document.getElementById("planNewName").addEventListener("keydown", function(e){ 
 
 /* manage */
 /* ซ้อมแข่ง (แอดมินเท่านั้น — หน้ารายชื่อไม่เปิดให้จอดูสดอยู่แล้ว) */
-document.getElementById("btnTrain").addEventListener("click", function(){ openPairPicker("train"); });
-document.getElementById("btnTrainManage").addEventListener("click", function(){ openPairPicker("train"); });
-document.getElementById("btnDuel").addEventListener("click", function(){ openPairPicker("duel"); });
-document.getElementById("btnDuelManage").addEventListener("click", function(){ openPairPicker("duel"); });
-document.getElementById("btnClosePair").addEventListener("click", closePairPicker);
-document.getElementById("pairOverlay").addEventListener("click", function(e){ if(e.target === this) closePairPicker(); });
 document.getElementById("btnCallout").addEventListener("click", toggleCallout);
 document.getElementById("btnManage").addEventListener("click", openManage);
 document.getElementById("btnCloseManage").addEventListener("click", closeManage);
@@ -6773,8 +6443,7 @@ window.__bq = {
   showScreen:showScreen, render:render, snapshot:snapshot, applySnapshot:applySnapshot,
   newSession:newSession, storageOK:function(){ return storageOK; },
   isAdmin:function(){ return isAdmin; }, pollState:pollState, startViewer:startViewer,
-  openPin:openPin, closePin:closePin, pinPush:pinPush, pinDel:pinDel, pinClear:pinClear,
-  pinBuf:function(){ return pinBuf; }, pinLocked:pinLocked, adminKeyTap:adminKeyTap,
+  adminKeyTap:adminKeyTap,
   isHelper:function(){ return isHelper; }, toggleHelper:toggleHelper, helperEndGame:helperEndGame,
   timerRunning:function(){ return !!timerLoop; },
   heartbeat:heartbeat, syncAdminState:syncAdminState,
@@ -6787,10 +6456,8 @@ window.__bq = {
   endedSession:function(){ return endedSession; },
   showCallout:showCallout, hideCallout:hideCallout, checkCallout:checkCallout,
   callout:function(){ return callout; },
-  duels:function(){ return duels; }, addDuel:addDuel, removeDuel:removeDuel, duelPenalty:duelPenalty,
-  duelOfPlayer:duelOfPlayer, consumeDuels:consumeDuels, queueDuel:queueDuel, deleteQueueSet:deleteQueueSet, suggestSet:suggestSet, confirmEnd:confirmEnd,
-  trainPairs:function(){ return trainPairs; }, addTrainPair:addTrainPair, removeTrainPair:removeTrainPair,
-  openPairPicker:openPairPicker, closePairPicker:closePairPicker, togglePairPick:togglePairPick,
+  deleteQueueSet:deleteQueueSet, suggestSet:suggestSet, confirmEnd:confirmEnd,
+  trainPairs:function(){ return trainPairs; }, duels:function(){ return duels; },
   mateOfPlayer:mateOfPlayer, setScore:setScore, pairPenalty:pairPenalty, seatPairs:seatPairs,
   nextInIds:nextInIds, openQueueSet:openQueueSet, toggleQueuePick:toggleQueuePick, closeSheet:closeSheet,
   pairOrder:pairOrder, pairSeating:pairSeating,
